@@ -1,2 +1,2 @@
 # actor
-Api to trigger actions to bmcs
+Api to carry out actions to bmcs
