@@ -46,6 +46,7 @@ func Serve() {
 	router := gin.Default()
 
 	router.SetHTMLTemplate(doc)
+	router.Static("/screenshot", viper.GetString("screenshot_storage"))
 	router.StaticFS("/static", staticBox.HTTPBox())
 
 	router.GET("/", func(c *gin.Context) {

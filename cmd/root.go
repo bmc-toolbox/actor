@@ -72,6 +72,7 @@ func initConfig() {
 		viper.AddConfigPath("/etc/bmc-toolbox")
 	}
 
+	viper.SetDefault("screenshot_storage", "/tmp/actor")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file hasn't been found, bail out

@@ -2,8 +2,10 @@ package routes
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
 	"github.com/bmc-toolbox/actor/internal/providers/ipmi"
@@ -14,6 +16,28 @@ import (
 	"github.com/spf13/viper"
 )
 
+func screenShot(bmc devices.Bmc, host string) (fileName string, status bool, err error) {
+	payload, externsion, err := bmc.Screenshot()
+	if err != nil {
+		return fileName, false, err
+	}
+
+	fileName = fmt.Sprintf(
+		"%s-%s_%d.%s",
+		host,
+		bmc.BmcType(),
+		time.Now().Unix(),
+		externsion,
+	)
+
+	err = ioutil.WriteFile(fmt.Sprintf("%s/%s", viper.GetString("screenshot_storage"), fileName), payload, 0644)
+	if err != nil {
+		return fileName, false, err
+	}
+
+	return fmt.Sprintf("/screenshot/%s", fileName), true, err
+}
+
 // HostPowerStatus checks the current power status of a given host
 func HostPowerStatus(c *gin.Context) {
 	host := c.Param("host")
@@ -22,26 +46,14 @@ func HostPowerStatus(c *gin.Context) {
 		return
 	}
 
-	conn, err := discover.ScanAndConnect(viper.GetString("bmc_user"), viper.GetString("bmc_pass"), host)
+	conn, err := discover.ScanAndConnect(host, viper.GetString("bmc_user"), viper.GetString("bmc_pass"))
 	if err != nil {
 		if err != errors.ErrVendorNotSupported {
 			c.JSON(http.StatusPreconditionFailed, gin.H{"message": err.Error()})
 			return
 		}
 
-		bmc, err := ipmi.New(viper.GetString("bmc_user"), viper.GetString("bmc_pass"), host)
-		if err != nil {
-			c.JSON(http.StatusPreconditionFailed, gin.H{"message": err.Error()})
-			return
-		}
-		status, err := bmc.IsOn()
-		if err != nil {
-			c.JSON(http.StatusExpectationFailed, gin.H{"action": "ison", "status": false, "message": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"action": "ison", "status": status, "message": "ok"})
 	}
-
 	if bmc, ok := conn.(devices.Bmc); ok {
 		defer bmc.Close()
 		status, err := bmc.PowerState()
@@ -50,10 +62,20 @@ func HostPowerStatus(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"action": "ison", "status": status, "message": "ok"})
+		return
 	}
 
-	c.JSON(http.StatusPreconditionFailed, gin.H{"message": "unknown device or vendor"})
-	return
+	bmc, err := ipmi.New(viper.GetString("bmc_user"), viper.GetString("bmc_pass"), host)
+	if err != nil {
+		c.JSON(http.StatusPreconditionFailed, gin.H{"message": err.Error()})
+		return
+	}
+	status, err := bmc.IsOn()
+	if err != nil {
+		c.JSON(http.StatusExpectationFailed, gin.H{"action": "ison", "status": false, "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"action": "ison", "status": status, "message": "ok"})
 }
 
 // HostExecuteActions carries out the execution of the requested action-list for a given host
@@ -64,7 +86,7 @@ func HostExecuteActions(c *gin.Context) {
 		return
 	}
 
-	conn, err := discover.ScanAndConnect(viper.GetString("bmc_user"), viper.GetString("bmc_pass"), host)
+	conn, err := discover.ScanAndConnect(host, viper.GetString("bmc_user"), viper.GetString("bmc_pass"))
 	if err != nil {
 		if err != errors.ErrVendorNotSupported {
 			c.JSON(http.StatusPreconditionFailed, gin.H{"message": err.Error()})
@@ -125,6 +147,7 @@ func HostExecuteActions(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, response)
+		return
 	}
 
 	if bmc, ok := conn.(devices.Bmc); ok {
@@ -145,6 +168,7 @@ func HostExecuteActions(c *gin.Context) {
 				}
 
 				var status bool
+				message := "ok"
 				switch action {
 				case actions.PowerCycle:
 					status, err = bmc.PowerCycle()
@@ -162,6 +186,8 @@ func HostExecuteActions(c *gin.Context) {
 					status, err = bmc.PowerOn()
 				case actions.PowerOff:
 					status, err = bmc.PowerOff()
+				case actions.Screenshot:
+					message, status, err = screenShot(bmc, host)
 				default:
 					response = append(response, gin.H{"action": action, "error": "unknown action"})
 					c.JSON(http.StatusBadRequest, response)
@@ -173,7 +199,7 @@ func HostExecuteActions(c *gin.Context) {
 					c.JSON(http.StatusExpectationFailed, response)
 					return
 				}
-				response = append(response, gin.H{"action": action, "status": status, "message": "ok"})
+				response = append(response, gin.H{"action": action, "status": status, "message": message})
 			}
 		} else {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -181,7 +207,8 @@ func HostExecuteActions(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, response)
+		return
 	}
+
 	c.JSON(http.StatusPreconditionFailed, gin.H{"message": "unknown device or vendor"})
-	return
 }
