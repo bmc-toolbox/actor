@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Actor">
+    <meta name="author" content="bmc-toolbox">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Actor - API DOC</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/static/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="/static/narrow-jumbotron.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header clearfix">
+        <nav>
+          <ul class="nav nav-pills float-right">
+            <li class="nav-item">
+              <a class="nav-link active" href="http://github.com/bmc-toolbox/actor">Source</span></a>
+            </li>
+          </ul>
+        </nav>
+        <h3 class="text-muted">Actor - Doc</h3>
+      </div>
+
+      <div class="row marketing">
+        <div class="col-lg-8">
+          <h4>Chassis</h4>
+          </br>
+          <h6>/chassis/:host</h6>
+          <p class="small">Chassis status and actions endpoint</p>
+          <p class="medium">GET</p>
+          <p class="small">Returns the current power state</p>
+          <p class="medium">POST</p>
+          <p class="small">'{ "action-sequence": ["poweron"] }': power on the chassis</p>
+          <p class="small">'{ "action-sequence": ["powercycle"] }': power cycle the chassis</p>
+          <p class="small">200: We are happy :) Yay!!!!</p>
+          <p class="small">412: Unable to connect to the chassis</p>
+          <p class="small">417: Failed to execute the request</p>
+
+
+          </br>
+          <h6>/chassis/:host/serial/:serial</h6>
+          <h6>/chassis/:host/position/:position</h6>
+          <p class="small">Blade within a chassis status and actions endpoints</p>
+          <p class="medium">GET</p>
+          <p class="small">Returns the current power state</p>
+          <p class="medium">POST</p>
+          <p class="small">'{ "action-sequence": ["ison"] }': check whether is powered on</p>
+          <p class="small">'{ "action-sequence": ["poweron"] }': power on the blade</p>
+          <p class="small">'{ "action-sequence": ["poweroff"] }': power off the blade</p>
+          <p class="small">'{ "action-sequence": ["powercycle"] }': power cycle the blade</p>
+          <p class="small">'{ "action-sequence": ["pxeonce"] }': set the next boot to pxe for one boot</p>
+          <p class="small">'{ "action-sequence": ["reseat"] }': reseat the blade power via software</p>
+          <p class="small">'{ "action-sequence": ["powercyclebmc"] }': power cycle the blade's bmc</p>
+          <p class="medium">Return codes</p>
+          <p class="small">200: We are happy :) Yay!!!!</p>
+          <p class="small">400: Blade isn't inside of the chassis</p>
+          <p class="small">412: Unable to connect to the chassis</p>
+          <p class="small">417: Failed to execute the request</p>
+        </div>
+        <div class="col-lg-8">
+        </br>
+        </div>
+        <div class="col-lg-8">
+          <h4>Host</h4>
+          </br>
+          
+          <h6>/host/:host</h6>
+          <p class="small">Host status and actions endpoint</p>
+          <p class="medium">GET</p>
+          <p class="small">Returns the current power state</p>
+          <p class="medium">POST</p>
+          <p class="small">'{ "action-sequence": ["ison"] }': check whether is powered on</p>
+          <p class="small">'{ "action-sequence": ["poweron"] }': power on the host</p>
+          <p class="small">'{ "action-sequence": ["poweroff"] }': power off the host</p>
+          <p class="small">'{ "action-sequence": ["powercycle"] }': power cycle the host</p>
+          <p class="small">'{ "action-sequence": ["pxeonce"] }': set the next boot to pxe for one boot</p>
+          <p class="small">'{ "action-sequence": ["powercyclebmc"] }': power cycle the hosts' bmc</p>
+          <p class="small">'{ "action-sequence": ["sleep Xy"] }': sleep for X time units of y e.g. 10s</p>
+          <p class="medium">Return codes</p>
+          <p class="small">200: We are happy :) Yay!!!!</p>
+          <p class="small">412: Unable to connect to the bmc</p>
+          <p class="small">417: Failed to execute the request</p>
+        </div>
+        <div class="col-lg-8">
+        </br>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <p>&copy; bmc-toolbox</p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="/static/ie10-viewport-bug-workaround.js"></script>
+  </body>
+</html>
+
