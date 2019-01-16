@@ -20,7 +20,10 @@ func connectToChassis(username string, password string, host string) (bmc device
 	}
 
 	if bmc, ok := conn.(devices.BmcChassis); ok {
-		return bmc, err
+		if bmc.IsActive() {
+			return bmc, err
+		}
+		return bmc, fmt.Errorf("this is the passive device, so I won't trigger any action")
 	}
 
 	return bmc, fmt.Errorf("unknown device or vendor")

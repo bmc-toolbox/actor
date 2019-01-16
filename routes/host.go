@@ -2,41 +2,18 @@ package routes
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
 	"github.com/bmc-toolbox/actor/internal/providers/ipmi"
+	"github.com/bmc-toolbox/actor/internal/screenshot"
 	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/bmc-toolbox/bmclib/discover"
 	"github.com/bmc-toolbox/bmclib/errors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
-
-func screenShot(bmc devices.Bmc, host string) (fileName string, status bool, err error) {
-	payload, externsion, err := bmc.Screenshot()
-	if err != nil {
-		return fileName, false, err
-	}
-
-	fileName = fmt.Sprintf(
-		"%s-%s_%d.%s",
-		host,
-		bmc.BmcType(),
-		time.Now().Unix(),
-		externsion,
-	)
-
-	err = ioutil.WriteFile(fmt.Sprintf("%s/%s", viper.GetString("screenshot_storage"), fileName), payload, 0644)
-	if err != nil {
-		return fileName, false, err
-	}
-
-	return fmt.Sprintf("/screenshot/%s", fileName), true, err
-}
 
 // HostPowerStatus checks the current power status of a given host
 func HostPowerStatus(c *gin.Context) {
@@ -187,7 +164,11 @@ func HostExecuteActions(c *gin.Context) {
 				case actions.PowerOff:
 					status, err = bmc.PowerOff()
 				case actions.Screenshot:
-					message, status, err = screenShot(bmc, host)
+					if viper.GetBool("s3.enabled") {
+						message, status, err = screenshot.S3(bmc, host)
+					} else {
+						message, status, err = screenshot.Local(bmc, host)
+					}
 				default:
 					response = append(response, gin.H{"action": action, "error": "unknown action"})
 					c.JSON(http.StatusBadRequest, response)

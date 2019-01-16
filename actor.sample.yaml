@@ -2,4 +2,12 @@ debug: true
 bmc_user: my_super_user 
 bmc_pass: my_super_password
 bind_to: 127.0.0.1:8000
+s3:
+  enabled: false
+  bucket: screenshots
+  folder: /daily
+  region: us-west-1
+  access_key_id: my_super_access_key_id
+  secret_access_key: my_super_accesss_key
+  endpoint: https://my-custom-endpoint.example.com
 screenshot_storage: /tmp/actor
