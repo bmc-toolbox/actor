@@ -1,8 +1,11 @@
 package idrac8
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/xml"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -10,6 +13,27 @@ import (
 	"github.com/bmc-toolbox/bmclib/internal/helper"
 	log "github.com/sirupsen/logrus"
 )
+
+// CurrentHTTPSCert returns the current x509 certficates configured on the BMC
+// The bool value returned indicates if the BMC supports CSR generation.
+// CurrentHTTPSCert implements the Configure interface
+func (i *IDrac8) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
+
+	dialer := &net.Dialer{
+		Timeout: time.Duration(10) * time.Second,
+	}
+
+	conn, err := tls.DialWithDialer(dialer, "tcp", i.ip+":"+"443", &tls.Config{InsecureSkipVerify: true})
+
+	if err != nil {
+		return []*x509.Certificate{{}}, true, err
+	}
+
+	defer conn.Close()
+
+	return conn.ConnectionState().PeerCertificates, true, nil
+
+}
 
 // Screenshot Grab screen preview.
 func (i *IDrac8) Screenshot() (response []byte, extension string, err error) {
@@ -63,7 +87,7 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 		return userInfo, err
 	}
 
-	xmlData := XmlRoot{}
+	xmlData := XMLRoot{}
 	err = xml.Unmarshal(response, &xmlData)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -76,7 +100,7 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 		return userInfo, err
 	}
 
-	for _, userAccount := range xmlData.XmlUserAccount {
+	for _, userAccount := range xmlData.XMLUserAccount {
 
 		user := User{
 			UserName:  userAccount.Name,
@@ -102,7 +126,7 @@ func (i *IDrac8) queryUsers() (userInfo UserInfo, err error) {
 			user.Enable = "disabled"
 		}
 
-		userInfo[userAccount.Id] = user
+		userInfo[userAccount.ID] = user
 	}
 
 	return userInfo, err

@@ -3,9 +3,10 @@ module github.com/bmc-toolbox/actor
 go 1.12
 
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
 	github.com/aws/aws-sdk-go v0.0.0-20190114232201-beaa15b1b227
-	github.com/bmc-toolbox/bmclib v0.2.3
+	github.com/bmc-toolbox/bmclib v0.2.6
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 	github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb // indirect
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
@@ -33,7 +34,9 @@ require (
 	github.com/ugorji/go v0.0.0-20180307152341-02537d3a3e32 // indirect
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/net v0.0.0-20180110232232-ab555f366c45 // indirect
+	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 	golang.org/x/sys v0.0.0-20181218192612-074acd46bca6 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 	gopkg.in/go-playground/validator.v9 v9.21.0 // indirect
 )

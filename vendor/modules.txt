@@ -36,7 +36,7 @@ github.com/aws/aws-sdk-go/private/protocol/query
 github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/internal/sdkuri
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
-# github.com/bmc-toolbox/bmclib v0.2.3
+# github.com/bmc-toolbox/bmclib v0.2.6
 github.com/bmc-toolbox/bmclib/devices
 github.com/bmc-toolbox/bmclib/discover
 github.com/bmc-toolbox/bmclib/errors

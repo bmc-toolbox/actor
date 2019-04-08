@@ -265,40 +265,19 @@ func (c *C7000) GetFirmwareVersion() (version string, err error) {
 }
 
 // UpdateFirmware updates the chassis firmware
-func (c *C7000) UpdateFirmware(host, filepath string) (status bool, err error) {
+func (c *C7000) UpdateFirmware(source, file string) (status bool, err error) {
 	err = c.sshLogin()
 	if err != nil {
 		return status, err
 	}
 
-	cmd := fmt.Sprintf("update image http://%s/%s", host, filepath)
+	cmd := fmt.Sprintf("update image %s/%s", source, file)
 	output, err := c.sshClient.Run(cmd)
 	if err != nil {
 		return false, fmt.Errorf(output)
 	}
 
 	if strings.Contains(output, "Restarting Onboard Administrator") {
-		return true, err
-	}
-
-	return status, err
-}
-
-// UpdateFirmwareBmcBlade updates the blade BMC firmware
-func (c *C7000) UpdateFirmwareBmcBlade(position int, host, filepath string) (status bool, err error) {
-	err = c.sshLogin()
-	if err != nil {
-		return status, err
-	}
-
-	// XXX make protocol as argument instead of hardcoding
-	cmd := fmt.Sprintf("update ilo %d http://%s/%s", position, host, filepath)
-	output, err := c.sshClient.Run(cmd)
-	if err != nil {
-		return false, fmt.Errorf(output)
-	}
-
-	if strings.Contains(output, "Successful update") {
 		return true, err
 	}
 
@@ -324,6 +303,11 @@ end_marker`
 	ribcl = strings.Replace(ribcl, "__USERNAME__", username, -1)
 	ribcl = strings.Replace(ribcl, "__PASSWORD__", password, -1)
 
+	err = c.sshLogin()
+	if err != nil {
+		return err
+	}
+
 	output, err := c.sshClient.Run(ribcl)
 	if err != nil {
 		return fmt.Errorf(output)
@@ -331,7 +315,7 @@ end_marker`
 
 	//since there are multiple blades and this command
 	//could fail on any of the blades because they are un responsive
-	//we only validate the command actually ran and not if it succeded on each blade.
+	//we only validate the command actually ran and not if it succeeded on each blade.
 	if !strings.Contains(output, "END RIBCL RESULTS") {
 		return fmt.Errorf(output)
 	}
@@ -365,6 +349,11 @@ end_marker`
 	ribcl = strings.Replace(ribcl, "__USERNAME__", username, -1)
 	ribcl = strings.Replace(ribcl, "__PASSWORD__", password, -1)
 
+	err = c.sshLogin()
+	if err != nil {
+		return err
+	}
+
 	output, err := c.sshClient.Run(ribcl)
 	if err != nil {
 		return fmt.Errorf(output)
@@ -372,7 +361,7 @@ end_marker`
 
 	//since there are multiple blades and this command
 	//could fail on any of the blades because they are un responsive
-	//we only validate the command actually ran and not if it succeded on each blade.
+	//we only validate the command actually ran and not if it succeeded on each blade.
 	if !strings.Contains(output, "END RIBCL RESULTS") {
 		return fmt.Errorf(output)
 	}
@@ -395,6 +384,11 @@ end_marker`
 
 	ribcl = strings.Replace(ribcl, "__USERNAME__", username, -1)
 
+	err = c.sshLogin()
+	if err != nil {
+		return err
+	}
+
 	output, err := c.sshClient.Run(ribcl)
 	if err != nil {
 		return fmt.Errorf(output)
@@ -402,7 +396,7 @@ end_marker`
 
 	//since there are multiple blades and this command
 	//could fail on any of the blades because they are un responsive
-	//we only validate the command actually ran and not if it succeded on each blade.
+	//we only validate the command actually ran and not if it succeeded on each blade.
 	if !strings.Contains(output, "END RIBCL RESULTS") {
 		return fmt.Errorf(output)
 	}

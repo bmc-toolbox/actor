@@ -1,8 +1,12 @@
 package idrac9
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"strconv"
 
 	"github.com/bmc-toolbox/bmclib/cfgresources"
@@ -28,6 +32,7 @@ func (i *IDrac9) Resources() []string {
 		"ldap",
 		"ldap_group",
 		"bios",
+		"https_cert",
 	}
 }
 
@@ -55,13 +60,13 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 
 	//GET current settings
 	currentBiosSettings, err := i.getBiosSettings()
-	if err != nil {
+	if err != nil || currentBiosSettings == nil {
 		msg := "Unable to get current bios settings through redfish."
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn(msg)
 		return errors.New(msg)
 	}
@@ -73,10 +78,10 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 		toApplyBiosSettings, err := diffBiosSettings(newBiosSettings, currentBiosSettings)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"IP":     i.ip,
-				"Model":  i.BmcType(),
-				"step":   helper.WhosCalling(),
-				"Error":  err,
+				"IP":    i.ip,
+				"Model": i.BmcType(),
+				"step":  helper.WhosCalling(),
+				"Error": err,
 			}).Fatal("diffBiosSettings returned error.")
 		}
 
@@ -104,26 +109,26 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 		if err != nil {
 			msg := "setBiosAttributes returned error."
 			log.WithFields(log.Fields{
-				"IP":     i.ip,
-				"Model":  i.BmcType(),
-				"step":   helper.WhosCalling(),
-				"Error":  err,
+				"IP":    i.ip,
+				"Model": i.BmcType(),
+				"step":  helper.WhosCalling(),
+				"Error": err,
 			}).Warn(msg)
 			return errors.New(msg)
 		}
 
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
 		}).Info("Bios configuration update job queued in iDrac.")
 
 	} else {
 
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
 		}).Info("Bios configuration is up to date.")
 	}
 
@@ -134,16 +139,17 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 // if the user exists, it updates the users password,
 // User implements the Configure interface.
 // Iterate over iDrac users and adds/removes/modifies user accounts
+// nolint: gocyclo
 func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 
 	err = i.validateCfg(cfgUsers)
 	if err != nil {
 		msg := "Config validation failed."
 		log.WithFields(log.Fields{
-			"step":   "applyUserParams",
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"Error":  err,
+			"step":  "applyUserParams",
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"Error": err,
 		}).Warn(msg)
 		return errors.New(msg)
 	}
@@ -152,10 +158,10 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 	if err != nil {
 		msg := "Unable to query existing users"
 		log.WithFields(log.Fields{
-			"step":   "applyUserParams",
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"Error":  err,
+			"step":  "applyUserParams",
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"Error": err,
 		}).Warn(msg)
 		return errors.New(msg)
 	}
@@ -173,11 +179,11 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 				userID, userInfo, err = getEmptyUserSlot(idracUsers)
 				if err != nil {
 					log.WithFields(log.Fields{
-						"IP":     i.ip,
-						"Model":  i.BmcType(),
-						"step":   helper.WhosCalling(),
-						"User":   cfgUser.Name,
-						"Error":  err,
+						"IP":    i.ip,
+						"Model": i.BmcType(),
+						"step":  helper.WhosCalling(),
+						"User":  cfgUser.Name,
+						"Error": err,
 					}).Warn("Unable to add new User.")
 					continue
 				}
@@ -200,11 +206,11 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 			err = i.putUser(userID, userInfo)
 			if err != nil {
 				log.WithFields(log.Fields{
-					"IP":     i.ip,
-					"Model":  i.BmcType(),
-					"step":   helper.WhosCalling(),
-					"User":   cfgUser.Name,
-					"Error":  err,
+					"IP":    i.ip,
+					"Model": i.BmcType(),
+					"step":  helper.WhosCalling(),
+					"User":  cfgUser.Name,
+					"Error": err,
 				}).Warn("Add/Update user request failed.")
 				continue
 			}
@@ -214,7 +220,7 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 		//if the user exists but is disabled in our config, remove the user
 		if cfgUser.Enable == false && uExists == true {
 			endpoint := fmt.Sprintf("sysmgmt/2017/server/user?userid=%d", userID)
-			statusCode, response, err := i.delete_(endpoint)
+			statusCode, response, err := i.delete(endpoint)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"IP":         i.ip,
@@ -230,9 +236,9 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 		}
 
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"User":   cfgUser.Name,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"User":  cfgUser.Name,
 		}).Debug("User parameters applied.")
 
 	}
@@ -256,9 +262,9 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 	if cfg.Server == "" {
 		msg := "Ldap resource parameter Server required but not declared."
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling,
 		}).Warn(msg)
 		return errors.New(msg)
 	}
@@ -309,10 +315,10 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 	if err != nil {
 		msg := "Ldap params PUT request failed."
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn(msg)
 		return errors.New("Ldap params put request failed")
 	}
@@ -322,16 +328,17 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 
 // LdapGroup applies LDAP Group/Role related configuration
 // LdapGroup implements the Configure interface.
+// nolint: gocyclo
 func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
 
 	idracLdapRoleGroups, err := i.queryLdapRoleGroups()
 	if err != nil {
 		msg := "Unable to query existing users"
 		log.WithFields(log.Fields{
-			"step":   "applyUserParams",
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"Error":  err,
+			"step":  "applyUserParams",
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"Error": err,
 		}).Warn(msg)
 		return errors.New(msg)
 	}
@@ -430,9 +437,9 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 	if cfg.Server1 == "" {
 		msg := "NTP resource expects parameter: server1."
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"Step":   helper.WhosCalling(),
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"Step":  helper.WhosCalling(),
 		}).Warn(msg)
 		return errors.New(msg)
 	}
@@ -440,9 +447,9 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 	if cfg.Timezone == "" {
 		msg := "NTP resource expects parameter: timezone."
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"Step":   helper.WhosCalling(),
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"Step":  helper.WhosCalling(),
 		}).Warn(msg)
 		return errors.New(msg)
 	}
@@ -481,17 +488,17 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 	err = i.putNtpConfig(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn("PUT Ntp  request failed.")
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"IP":     i.ip,
-		"Model":  i.BmcType(),
+		"IP":    i.ip,
+		"Model": i.BmcType(),
 	}).Debug("NTP servers param applied.")
 
 	return err
@@ -506,9 +513,9 @@ func (i *IDrac9) Syslog(cfg *cfgresources.Syslog) (err error) {
 
 	if cfg.Server == "" {
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
 		}).Warn("Syslog resource expects parameter: Server.")
 		return
 	}
@@ -539,24 +546,24 @@ func (i *IDrac9) Syslog(cfg *cfgresources.Syslog) (err error) {
 	err = i.putSyslog(payload)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn("PUT Syslog request failed.")
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"IP":     i.ip,
-		"Model":  i.BmcType(),
+		"IP":    i.ip,
+		"Model": i.BmcType(),
 	}).Debug("Syslog parameters applied.")
 	return err
 }
 
 // Network method implements the Configure interface
 // applies various network parameters.
-func (i *IDrac9) Network(cfg *cfgresources.Network) (err error) {
+func (i *IDrac9) Network(cfg *cfgresources.Network) (reset bool, err error) {
 
 	params := map[string]string{
 		"EnableIPv4":              "Enabled",
@@ -606,51 +613,164 @@ func (i *IDrac9) Network(cfg *cfgresources.Network) (err error) {
 	err = i.putIPv4(ipv4)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn("PUT IPv4 request failed.")
 	}
 
 	err = i.putSerialOverLan(serialOverLan)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn("PUT SerialOverLan request failed.")
 	}
 
 	err = i.putSerialRedirection(serialRedirection)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn("PUT SerialRedirection request failed.")
 	}
 
 	err = i.putIpmiOverLan(ipmiOverLan)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"IP":     i.ip,
-			"Model":  i.BmcType(),
-			"step":   helper.WhosCalling(),
-			"Error":  err,
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
 		}).Warn("PUT IpmiOverLan request failed.")
 	}
 
 	log.WithFields(log.Fields{
-		"IP":     i.ip,
-		"Model":  i.BmcType(),
+		"IP":    i.ip,
+		"Model": i.BmcType(),
 	}).Debug("Network config parameters applied.")
-	return err
+	return reset, err
 }
 
 // SetLicense implements the Configure interface.
 func (i *IDrac9) SetLicense(cfg *cfgresources.License) (err error) {
 	return err
+}
+
+// GenerateCSR generates a CSR request on the BMC and returns the CSR.
+// GenerateCSR implements the Configure interface.
+// 1. PUT CSR info based on configuration
+// 2. POST sysmgmt/2012/server/network/ssl/csr which returns a base64encoded CSR.
+func (i *IDrac9) GenerateCSR(cert *cfgresources.HTTPSCertAttributes) ([]byte, error) {
+
+	c := CSRInfo{
+		CommonName:       cert.CommonName,
+		CountryCode:      cert.CountryCode,
+		LocalityName:     cert.Locality,
+		OrganizationName: cert.OrganizationName,
+		OrganizationUnit: cert.OrganizationUnit,
+		StateName:        cert.StateName,
+		EmailAddr:        cert.Email,
+		SubjectAltName:   cert.SubjectAltName,
+	}
+
+	// 1. PUT CSR params
+	err := i.putCSR(c)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	// 2. POST request for CSR file data
+	status, body, _ := i.post("sysmgmt/2012/server/network/ssl/csr", []byte{}, "")
+	if status != 200 {
+		return []byte{}, fmt.Errorf("Non 200 response when requesting for CSR : %d", status)
+	}
+
+	return body, nil
+}
+
+// UploadHTTPSCert implements the Configure interface.
+// UploadHTTPSCert uploads the given CRT cert,
+// returns true if the BMC needs a reset.
+// 1. POST upload signed x509 cert in multipart form.
+// 2. POST returned resource URI
+func (i *IDrac9) UploadHTTPSCert(cert []byte, certFileName string, key []byte, keyFileName string) (bool, error) {
+
+	endpoint := "sysmgmt/2012/server/transient/filestore"
+
+	// setup a buffer for our multipart form
+	var form bytes.Buffer
+	w := multipart.NewWriter(&form)
+
+	// setup the ssl cert part
+	formWriter, err := w.CreateFormFile("fileName", certFileName)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = io.Copy(formWriter, bytes.NewReader(cert))
+	if err != nil {
+		return false, err
+	}
+
+	// close multipart writer - adds the teminating boundary.
+	w.Close()
+
+	// 1. POST upload x509 cert
+	status, body, err := i.post(endpoint, form.Bytes(), w.FormDataContentType())
+	if err != nil || status != 201 {
+		log.WithFields(log.Fields{
+			"IP":       i.ip,
+			"Model":    i.BmcType(),
+			"endpoint": endpoint,
+			"step":     helper.WhosCalling(),
+			"status":   status,
+		}).Warn("Cert form upload POST request failed, expected 201.")
+		return false, err
+	}
+
+	// extract resourceURI from response
+	var certStore = new(certStore)
+	err = json.Unmarshal(body, certStore)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"step":  helper.WhosCalling(),
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"Error": err,
+		}).Warn("Unable to unmarshal cert store response payload.")
+		return false, err
+	}
+
+	resourceURI, err := json.Marshal(certStore.File)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"step":  helper.WhosCalling(),
+			"IP":    i.ip,
+			"Model": i.BmcType(),
+			"Error": err,
+		}).Warn("Unable to marshal cert store resource URI.")
+		return false, err
+	}
+
+	// 2. POST resource URI
+	endpoint = "sysmgmt/2012/server/network/ssl/cert"
+	status, _, err = i.post(endpoint, []byte(resourceURI), "")
+	if err != nil || status != 201 {
+		log.WithFields(log.Fields{
+			"IP":       i.ip,
+			"Model":    i.BmcType(),
+			"endpoint": endpoint,
+			"step":     helper.WhosCalling(),
+			"status":   status,
+		}).Warn("Cert form upload POST request failed, expected 201.")
+		return false, err
+	}
+
+	return true, err
 }

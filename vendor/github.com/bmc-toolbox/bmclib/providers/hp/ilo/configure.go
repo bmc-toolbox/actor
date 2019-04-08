@@ -3,6 +3,7 @@ package ilo
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/bmc-toolbox/bmclib/cfgresources"
 	"github.com/bmc-toolbox/bmclib/devices"
@@ -24,6 +25,8 @@ func (i *Ilo) Resources() []string {
 		"ntp",
 		"ldap_group",
 		"ldap",
+		"network",
+		"https_cert",
 	}
 }
 
@@ -85,6 +88,7 @@ func ldapGroupExists(group string, directoryGroups []DirectoryGroups) (directory
 // User applies the User configuration resource,
 // if the user exists, it updates the users password,
 // User implements the Configure interface.
+// nolint: gocyclo
 func (i *Ilo) User(users []*cfgresources.User) (err error) {
 
 	existingUsers, err := i.queryUsers()
@@ -153,7 +157,7 @@ func (i *Ilo) User(users []*cfgresources.User) (err error) {
 			//if the user exists, modify it
 			if uexists {
 				userinfo.Method = "mod_user"
-				userinfo.UserId = userinfo.Id
+				userinfo.UserID = userinfo.ID
 				userinfo.UserName = user.Name
 				userinfo.LoginName = user.Name
 				userinfo.Password = user.Password
@@ -170,7 +174,7 @@ func (i *Ilo) User(users []*cfgresources.User) (err error) {
 		//if the user is disabled remove it
 		if user.Enable == false && uexists {
 			userinfo.Method = "del_user"
-			userinfo.UserId = userinfo.Id
+			userinfo.UserID = userinfo.ID
 			log.WithFields(log.Fields{
 				"IP":    i.ip,
 				"Model": i.BmcType(),
@@ -370,7 +374,17 @@ func (i *Ilo) Ntp(cfg *cfgresources.Ntp) (err error) {
 		return errors.New(msg)
 	}
 
-	_, validTimezone := Timezones[cfg.Timezone]
+	// supported timezone based on device.
+	var timezones map[string]int
+
+	// ideally ilo5 ilo4 should be split up into its own device
+	// instead of depending on BmcType.
+	if i.BmcType() == "ilo5" {
+		timezones = TimezonesIlo5
+	} else {
+		timezones = TimezonesIlo4
+	}
+	_, validTimezone := timezones[cfg.Timezone]
 	if !validTimezone {
 		msg := "NTP resource a valid timezone parameter, for valid timezones see hp/ilo/model.go"
 		log.WithFields(log.Fields{
@@ -415,7 +429,7 @@ func (i *Ilo) Ntp(cfg *cfgresources.Ntp) (err error) {
 		TimePropagate:               existingConfig.TimePropagate,
 		SntpServer1:                 cfg.Server1,
 		SntpServer2:                 cfg.Server2,
-		OurZone:                     Timezones[cfg.Timezone],
+		OurZone:                     timezones[cfg.Timezone],
 		Method:                      "set_sntp",
 		SessionKey:                  i.sessionKey,
 	}
@@ -458,6 +472,7 @@ func (i *Ilo) Ntp(cfg *cfgresources.Ntp) (err error) {
 
 // LdapGroup applies LDAP Group/Role related configuration
 // LdapGroup implements the Configure interface.
+// nolint: gocyclo
 func (i *Ilo) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.Ldap) (err error) {
 
 	directoryGroups, err := i.queryDirectoryGroups()
@@ -668,9 +683,133 @@ func (i *Ilo) Ldap(cfg *cfgresources.Ldap) (err error) {
 
 }
 
+// GenerateCSR generates a CSR request on the BMC.
+// If its the first CSR attempt - the BMC is going to take a while to generate the CSR,
+// the response will be a 500 with the body	{"message":"JS_CERT_NOT_AVAILABLE","details":null}
+// If the configuration for the Subject has not changed and the CSR is ready a CSR is returned.
+func (i *Ilo) GenerateCSR(cert *cfgresources.HTTPSCertAttributes) ([]byte, error) {
+
+	csrConfig := &csr{
+		Country:          cert.CountryCode,
+		State:            cert.StateName,
+		Locality:         cert.Locality,
+		CommonName:       cert.CommonName,
+		OrganizationName: cert.OrganizationName,
+		OrganizationUnit: cert.OrganizationUnit,
+		IncludeIP:        1, // Use IP as SAN
+		Method:           "create_csr",
+		SessionKey:       i.sessionKey,
+	}
+
+	payload, err := json.Marshal(csrConfig)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	endpoint := "json/csr"
+	statusCode, response, err := i.post(endpoint, payload)
+	if statusCode == 500 {
+		return []byte{}, fmt.Errorf("CSR being generated, retry later")
+	}
+
+	// if its a not a 200 at this point,
+	// something else went wrong.
+	if statusCode != 200 {
+		return []byte{}, fmt.Errorf("Unexpected return code: %d", statusCode)
+	}
+
+	// Some other error
+	if err != nil {
+		return []byte{}, err
+	}
+
+	var r = new(csrResponse)
+	err = json.Unmarshal(response, r)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return []byte(r.CsrPEM), nil
+}
+
+// UploadHTTPSCert uploads the given CRT cert,
+// UploadHTTPSCert implements the Configure interface.
+// return true if the bmc requires a reset.
+func (i *Ilo) UploadHTTPSCert(cert []byte, certFileName string, key []byte, keyFileName string) (bool, error) {
+
+	certPayload := &certImport{
+		Method:          "import_certificate",
+		CertificateData: string(cert),
+		SessionKey:      i.sessionKey,
+	}
+
+	payload, err := json.Marshal(certPayload)
+	if err != nil {
+		return false, err
+	}
+
+	endpoint := "json/certificate"
+	statusCode, _, err := i.post(endpoint, payload)
+	if err != nil {
+		return false, err
+	}
+
+	if statusCode != 200 {
+		return false, fmt.Errorf("Unexpected return code: %d", statusCode)
+	}
+
+	// ILOs need a reset after cert upload.
+	return true, nil
+}
+
 // Network method implements the Configure interface
-func (i *Ilo) Network(cfg *cfgresources.Network) error {
-	return nil
+// nolint: gocyclo
+func (i *Ilo) Network(cfg *cfgresources.Network) (reset bool, err error) {
+
+	// check if AccessSettings configuration update is required.
+	accessSettings, updateAccessSettings, err := i.cmpAccessSettings(cfg)
+	if err != nil {
+		return reset, err
+	}
+
+	if updateAccessSettings {
+		payload, err := json.Marshal(accessSettings)
+		if err != nil {
+			return reset, fmt.Errorf("Error marshaling AccessSettings payload: %s", err)
+		}
+
+		endpoint := "json/access_settings"
+		statusCode, _, err := i.post(endpoint, payload)
+		if err != nil || statusCode != 200 {
+			return reset, fmt.Errorf("Error/non 200 response calling access_settings, status: %d, error: %s", statusCode, err)
+		}
+
+		reset = true
+	}
+
+	// check the current network IPv4 config
+	networkIPv4Settings, updateIPv4Settings, err := i.cmpNetworkIPv4Settings(cfg)
+	if err != nil {
+		return reset, err
+	}
+
+	if updateIPv4Settings {
+
+		payload, err := json.Marshal(networkIPv4Settings)
+		if err != nil {
+			return reset, fmt.Errorf("Error marshaling NetworkIPv4 payload: %s", err)
+		}
+
+		endpoint := "json/network_ipv4/interface/0"
+		statusCode, _, err := i.post(endpoint, payload)
+		if err != nil || statusCode != 200 {
+			return reset, fmt.Errorf("Error/non 200 response calling access_settings, status: %d, error: %s", statusCode, err)
+		}
+
+		reset = true
+	}
+
+	return reset, nil
 }
 
 // Bios method implements the Configure interface

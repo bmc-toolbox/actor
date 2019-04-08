@@ -77,7 +77,7 @@ func (i *IDrac8) put(endpoint string, payload []byte) (statusCode int, response 
 		}
 	}
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] %s/%s", bmcURL, endpoint))
@@ -93,7 +93,7 @@ func (i *IDrac8) put(endpoint string, payload []byte) (statusCode int, response 
 	}
 	defer resp.Body.Close()
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -116,7 +116,7 @@ func (i *IDrac8) put(endpoint string, payload []byte) (statusCode int, response 
 }
 
 // posts the payload to the given endpoint
-func (i *IDrac8) post(endpoint string, data []byte) (statusCode int, body []byte, err error) {
+func (i *IDrac8) post(endpoint string, data []byte, formDataContentType string) (statusCode int, body []byte, err error) {
 
 	u, err := url.Parse(fmt.Sprintf("https://%s/%s", i.ip, endpoint))
 	if err != nil {
@@ -135,9 +135,23 @@ func (i *IDrac8) post(endpoint string, data []byte) (statusCode int, body []byte
 	}
 
 	req.Header.Add("ST2", i.st2)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	if log.GetLevel() == log.DebugLevel {
+	if formDataContentType == "" {
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	} else {
+
+		// Set multipart form content type
+		req.Header.Set("Content-Type", formDataContentType)
+
+		// set the token value
+		c := new(http.Cookie)
+		c.Name = "tokenvalue"
+		c.Value = i.st1
+
+		req.AddCookie(c)
+	}
+
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] https://%s/%s", i.ip, endpoint))
@@ -152,7 +166,7 @@ func (i *IDrac8) post(endpoint string, data []byte) (statusCode int, body []byte
 		return 0, []byte{}, err
 	}
 	defer resp.Body.Close()
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -197,7 +211,7 @@ func (i *IDrac8) get(endpoint string, extraHeaders *map[string]string) (payload 
 			req.AddCookie(cookie)
 		}
 	}
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] https://%s/%s", bmcURL, endpoint))
@@ -212,7 +226,7 @@ func (i *IDrac8) get(endpoint string, extraHeaders *map[string]string) (payload 
 		return payload, err
 	}
 	defer resp.Body.Close()
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -326,7 +340,6 @@ func (i *IDrac8) Status() (status string, err error) {
 	iDracHealthStatus := &dell.IDracHealthStatus{}
 	err = json.Unmarshal(payload, iDracHealthStatus)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return status, err
 	}
 
@@ -355,7 +368,6 @@ func (i *IDrac8) PowerKw() (power float64, err error) {
 	iDracRoot := &dell.IDracRoot{}
 	err = xml.Unmarshal(payload, iDracRoot)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return power, err
 	}
 
@@ -492,7 +504,6 @@ func (i *IDrac8) License() (name string, licType string, err error) {
 	iDracLicense := &dell.IDracLicense{}
 	err = json.Unmarshal(payload, iDracLicense)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return name, licType, err
 	}
 
@@ -595,7 +606,6 @@ func (i *IDrac8) TempC() (temp int, err error) {
 	iDracTemp := &dell.IDracTemp{}
 	err = json.Unmarshal(payload, iDracTemp)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return temp, err
 	}
 
@@ -622,7 +632,6 @@ func (i *IDrac8) CPU() (cpu string, cpuCount int, coreCount int, hyperthreadCoun
 	dellBladeProc := &dell.BladeProcessorEndpoint{}
 	err = json.Unmarshal(payload, dellBladeProc)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return cpu, cpuCount, coreCount, hyperthreadCount, err
 	}
 
@@ -674,7 +683,6 @@ func (i *IDrac8) Psus() (psus []*devices.Psu, err error) {
 	iDracRoot := &dell.IDracRoot{}
 	err = xml.Unmarshal(payload, iDracRoot)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return psus, err
 	}
 
@@ -855,4 +863,14 @@ func (i *IDrac8) ServerSnapshot() (server interface{}, err error) {
 func (i *IDrac8) UpdateCredentials(username string, password string) {
 	i.username = username
 	i.password = password
+}
+
+// GetConfigure returns itself as a configure interface to avoid using reflect
+func (i *IDrac8) GetConfigure() devices.Configure {
+	return i
+}
+
+// GetCollection returns itself as a configure interface to avoid using reflect
+func (i *IDrac8) GetCollection() devices.BmcCollection {
+	return i
 }
