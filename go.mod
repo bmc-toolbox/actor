@@ -4,11 +4,10 @@ go 1.12
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
+	github.com/GeertJohan/go.rice v1.0.0
 	github.com/aws/aws-sdk-go v0.0.0-20190114232201-beaa15b1b227
 	github.com/bmc-toolbox/bmclib v0.2.6
 	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
-	github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb // indirect
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v0.0.0-20180329063307-6d913fc343cf
 	github.com/go-playground/locales v0.12.1 // indirect
@@ -19,7 +18,6 @@ require (
 	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
-	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2 // indirect

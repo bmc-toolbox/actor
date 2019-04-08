@@ -1,4 +1,4 @@
-# github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da
+# github.com/GeertJohan/go.rice v1.0.0
 github.com/GeertJohan/go.rice
 github.com/GeertJohan/go.rice/embedded
 # github.com/aws/aws-sdk-go v0.0.0-20190114232201-beaa15b1b227
@@ -58,7 +58,7 @@ github.com/bmc-toolbox/bmclib/internal/ipmi
 github.com/bmc-toolbox/bmclib/providers/supermicro
 # github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432
 github.com/cyberdelia/go-metrics-graphite
-# github.com/daaku/go.zipexe v0.0.0-20150329023125-a5fe2436ffcb
+# github.com/daaku/go.zipexe v1.0.0
 github.com/daaku/go.zipexe
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
@@ -99,8 +99,6 @@ github.com/inconshreveable/mousetrap
 github.com/jmespath/go-jmespath
 # github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
-# github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
-github.com/kardianos/osext
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/magiconair/properties v1.8.0
