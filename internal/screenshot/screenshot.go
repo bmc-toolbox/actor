@@ -31,7 +31,10 @@ func upload(payload []byte, fileName string) (url string, err error) {
 		DisableSSL:       aws.Bool(false),
 		S3ForcePathStyle: aws.Bool(true),
 	}
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		return url, err
+	}
 	s3Client := s3.New(newSession)
 	cparams := &s3.CreateBucketInput{
 		Bucket: bucket, // Required
