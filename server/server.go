@@ -5,7 +5,7 @@ import (
 
 	"html/template"
 
-	rice "github.com/GeertJohan/go.rice"
+	"github.com/GeertJohan/go.rice"
 	"github.com/bmc-toolbox/actor/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
