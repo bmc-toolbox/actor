@@ -14,7 +14,7 @@ import (
 )
 
 func connectToChassis(username string, password string, host string) (bmc devices.Cmc, err error) {
-	conn, err := discover.ScanAndConnect(host, viper.GetString("bmc_user"), viper.GetString("bmc_pass"))
+	conn, err := discover.ScanAndConnect(host, username, password)
 	if err != nil {
 		return bmc, err
 	}
