@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Upload screenshtos to a S3 bucket
+// Upload screenshots to a S3 bucket
 // TODO: this is a simple poc with s3, we need more love to make it better.
 func upload(payload []byte, fileName string) (url string, err error) {
 	bucket := aws.String(viper.GetString("s3.bucket"))
@@ -31,7 +31,10 @@ func upload(payload []byte, fileName string) (url string, err error) {
 		DisableSSL:       aws.Bool(false),
 		S3ForcePathStyle: aws.Bool(true),
 	}
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		return url, err
+	}
 	s3Client := s3.New(newSession)
 	cparams := &s3.CreateBucketInput{
 		Bucket: bucket, // Required
@@ -60,7 +63,7 @@ func upload(payload []byte, fileName string) (url string, err error) {
 }
 
 func takeScreenShot(bmc devices.Bmc, host string) (payload []byte, fileName string, err error) {
-	payload, externsion, err := bmc.Screenshot()
+	payload, extension, err := bmc.Screenshot()
 	if err != nil {
 		return payload, fileName, err
 	}
@@ -70,7 +73,7 @@ func takeScreenShot(bmc devices.Bmc, host string) (payload []byte, fileName stri
 		host,
 		bmc.BmcType(),
 		time.Now().Unix(),
-		externsion,
+		extension,
 	)
 
 	return payload, fileName, err

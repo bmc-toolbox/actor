@@ -4,8 +4,10 @@ import (
 	"encoding/xml"
 )
 
+// UserInfo type is used to unmarshal user accounts payload.
 type UserInfo map[int]User
 
+// Syslog struct holds syslog configuration payload
 //https://10.193.251.5/sysmgmt/2012/server/configgroup/iDRAC.SysLog
 type Syslog struct {
 	Port    string `json:"Port"`
@@ -15,6 +17,7 @@ type Syslog struct {
 	Server3 string `json:"Server3"`
 }
 
+// User struct holds user account configuration payload
 //https://10.193.251.5/sysmgmt/2012/server/configgroup/iDRAC.Users.3
 type User struct {
 	UserName         string `json:"UserName"`
@@ -25,6 +28,16 @@ type User struct {
 	SolEnable        string `json:"SolEnable"`
 }
 
+// certStore is the response received when uploading a multipart form,
+// that includes the certificate, this cert is stored in a transient store.
+// {"File":{"ResourceURI":"/sysmgmt/2012/server/transient/filestore/721k12.bmc.dummy.com.crt"}}
+type certStore struct {
+	File struct {
+		ResourceURI string `json:"ResourceURI"`
+	} `json:"File"`
+}
+
+// NtpServer struct holds NTP configuration payload
 //GET - params as query string
 //https://10.193.251.10/data?set=tm_ntp_int_opmode:1,tm_ntp_str_server1:ntp0.lhr4.example.com,tm_ntp_str_server2:ntp0.ams4.example.com,tm_ntp_str_server3:ntp0.fra4.example.com
 type NtpServer struct {
@@ -34,16 +47,18 @@ type NtpServer struct {
 	Server3 string `url:"tm_ntp_str_server3"`
 }
 
-type XmlRoot struct {
+// XMLRoot is used to unmarshal XML response payloads.
+type XMLRoot struct {
 	XMLName        xml.Name         `xml:"root"`
 	Text           string           `xml:",chardata"`
-	XmlUserAccount []XmlUserAccount `xml:"user"`
+	XMLUserAccount []XMLUserAccount `xml:"user"`
 	Status         string           `xml:"status"`
 }
 
-type XmlUserAccount struct {
+// XMLUserAccount is used to unmarshal XML user account response payloads.
+type XMLUserAccount struct {
 	Name          string `xml:"name"`
-	Id            int    `xml:"id"`
+	ID            int    `xml:"id"`
 	Privileges    int    `xml:"privileges"` //511 = Administrator, 0 = None,
 	Enabled       int    `xml:"enabled"`
 	LanPriv       int    `xml:"lanPriv"`    //4 = Administrator, 3 = Operator, 2 = User, 15 = None

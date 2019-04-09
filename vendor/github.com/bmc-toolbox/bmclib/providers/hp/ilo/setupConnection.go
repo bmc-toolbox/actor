@@ -56,7 +56,7 @@ func (i *Ilo) httpLogin() (err error) {
 		}
 	}
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] %s", i.loginURL.String()))
@@ -83,7 +83,7 @@ func (i *Ilo) httpLogin() (err error) {
 		return err
 	}
 	defer resp.Body.Close()
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -122,20 +122,42 @@ func (i *Ilo) Close() (err error) {
 	if i.httpClient != nil {
 		log.WithFields(log.Fields{"step": "bmc connection", "vendor": hp.VendorID, "ip": i.ip}).Debug("logout from bmc http")
 
-		data := []byte(`{"method":"logout"}`)
+		data := []byte(fmt.Sprintf(`{"method":"logout", "session_key": "%s"}`, i.sessionKey))
 
 		req, e := http.NewRequest("POST", i.loginURL.String(), bytes.NewBuffer(data))
 		if e != nil {
 			err = multierror.Append(e, err)
 		} else {
+
 			req.Header.Set("Content-Type", "application/json")
+
+			if log.GetLevel() == log.TraceLevel {
+				dump, err := httputil.DumpRequestOut(req, true)
+				if err == nil {
+					log.Println(fmt.Sprintf("[Request] %s", i.loginURL.String()))
+					log.Println(">>>>>>>>>>>>>>>")
+					log.Printf("%s\n\n", dump)
+					log.Println(">>>>>>>>>>>>>>>")
+				}
+			}
 
 			resp, e := i.httpClient.Do(req)
 			if e != nil {
 				err = multierror.Append(e, err)
 			} else {
 				defer resp.Body.Close()
+
 				defer io.Copy(ioutil.Discard, resp.Body)
+				if log.GetLevel() == log.TraceLevel {
+					dump, err := httputil.DumpResponse(resp, true)
+					if err == nil {
+						log.Println("[Response]")
+						log.Println("<<<<<<<<<<<<<<")
+						log.Printf("%s\n\n", dump)
+						log.Println("<<<<<<<<<<<<<<")
+					}
+				}
+
 			}
 		}
 	}

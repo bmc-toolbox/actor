@@ -3,23 +3,24 @@ package m1000e
 import (
 	"errors"
 	"fmt"
+
 	"github.com/bmc-toolbox/bmclib/cfgresources"
 	log "github.com/sirupsen/logrus"
 )
 
-func (m *M1000e) newSslCfg(ssl *cfgresources.Ssl) (MFormParams map[string]string) {
-
-	//params for the multipart form.
-	MformParams := make(map[string]string)
-
-	MformParams["ST2"] = m.SessionToken
-	MformParams["caller"] = ""
-	MformParams["pageCode"] = ""
-	MformParams["pageId"] = "2"
-	MformParams["pageName"] = ""
-
-	return MformParams
-}
+//func (m *M1000e) newSslCfg(ssl *cfgresources.Ssl) (MFormParams map[string]string) {
+//
+//	//params for the multipart form.
+//	MformParams := make(map[string]string)
+//
+//	MformParams["ST2"] = m.SessionToken
+//	MformParams["caller"] = ""
+//	MformParams["pageCode"] = ""
+//	MformParams["pageId"] = "2"
+//	MformParams["pageName"] = ""
+//
+//	return MformParams
+//}
 
 // Given the Ntp resource,
 // populate the required Datetime params
@@ -147,7 +148,7 @@ func (m *M1000e) isRoleValid(role string) bool {
 }
 
 // Given the Ldap resource, populate required LdapArgParams
-func (m *M1000e) newLdapRoleCfg(cfg *cfgresources.LdapGroup, roleId int) (ldapArgCfg LdapArgParams, err error) {
+func (m *M1000e) newLdapRoleCfg(cfg *cfgresources.LdapGroup, roleID int) (ldapArgCfg LdapArgParams, err error) {
 
 	var privBitmap, genLdapRolePrivilege int
 
@@ -192,7 +193,7 @@ func (m *M1000e) newLdapRoleCfg(cfg *cfgresources.LdapGroup, roleId int) (ldapAr
 	ldapArgCfg = LdapArgParams{
 		SessionToken:         m.SessionToken,
 		PrivBitmap:           privBitmap,
-		Index:                roleId,
+		Index:                roleID,
 		GenLdapRoleDn:        groupDn,
 		GenLdapRolePrivilege: genLdapRolePrivilege,
 		Login:                true,
@@ -241,12 +242,12 @@ func (m *M1000e) newInterfaceCfg(syslog *cfgresources.Syslog) InterfaceParams {
 		WebserverEnable:                  true,
 		WebserverMaxSessions:             4,
 		WebserverTimeout:                 1800,
-		WebserverHttpPort:                80,
-		WebserverHttpsPort:               443,
-		SshEnable:                        true,
-		SshMaxSessions:                   4,
-		SshTimeout:                       1800,
-		SshPort:                          22,
+		WebserverHTTPPort:                80,
+		WebserverHTTPSPort:               443,
+		SSHEnable:                        true,
+		SSHMaxSessions:                   4,
+		SSHTimeout:                       1800,
+		SSHPort:                          22,
 		TelnetEnable:                     true,
 		TelnetMaxSessions:                4,
 		TelnetTimeout:                    1800,
@@ -270,7 +271,7 @@ func (m *M1000e) newInterfaceCfg(syslog *cfgresources.Syslog) InterfaceParams {
 
 // Given the user resource, populate the required UserParams
 // check for missing params
-func (m *M1000e) newUserCfg(user *cfgresources.User, userId int) UserParams {
+func (m *M1000e) newUserCfg(user *cfgresources.User, userID int) UserParams {
 
 	var cmcGroup, privilege int
 
@@ -301,7 +302,7 @@ func (m *M1000e) newUserCfg(user *cfgresources.User, userId int) UserParams {
 	userCfg := UserParams{
 		SessionToken:    m.SessionToken,
 		Privilege:       privilege,
-		UserId:          userId,
+		UserID:          userID,
 		EnableUser:      user.Enable,
 		UserName:        user.Name,
 		ChangePassword:  true,

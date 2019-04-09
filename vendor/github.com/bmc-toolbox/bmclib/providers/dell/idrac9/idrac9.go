@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -72,7 +73,7 @@ func (i *IDrac9) get(endpoint string, extraHeaders *map[string]string) (payload 
 		}
 	}
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] %s/%s", bmcURL, endpoint))
@@ -88,7 +89,7 @@ func (i *IDrac9) get(endpoint string, extraHeaders *map[string]string) (payload 
 	}
 	defer resp.Body.Close()
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -121,7 +122,7 @@ func (i *IDrac9) put(endpoint string, payload []byte) (statusCode int, response 
 
 	req.Header.Add("XSRF-TOKEN", i.xsrfToken)
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] %s/%s", bmcURL, endpoint))
@@ -137,7 +138,7 @@ func (i *IDrac9) put(endpoint string, payload []byte) (statusCode int, response 
 	}
 	defer resp.Body.Close()
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -160,7 +161,7 @@ func (i *IDrac9) put(endpoint string, payload []byte) (statusCode int, response 
 }
 
 // calls delete on the given endpoint
-func (i *IDrac9) delete_(endpoint string) (statusCode int, payload []byte, err error) {
+func (i *IDrac9) delete(endpoint string) (statusCode int, payload []byte, err error) {
 
 	bmcURL := fmt.Sprintf("https://%s", i.ip)
 
@@ -171,7 +172,7 @@ func (i *IDrac9) delete_(endpoint string) (statusCode int, payload []byte, err e
 
 	req.Header.Add("XSRF-TOKEN", i.xsrfToken)
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] %s", fmt.Sprintf("%s/%s", bmcURL, endpoint)))
@@ -187,7 +188,7 @@ func (i *IDrac9) delete_(endpoint string) (statusCode int, payload []byte, err e
 	}
 	defer resp.Body.Close()
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -203,6 +204,64 @@ func (i *IDrac9) delete_(endpoint string) (statusCode int, payload []byte, err e
 	}
 
 	return resp.StatusCode, payload, err
+}
+
+// posts the payload to the given endpoint
+func (i *IDrac9) post(endpoint string, data []byte, formDataContentType string) (statusCode int, body []byte, err error) {
+
+	u, err := url.Parse(fmt.Sprintf("https://%s/%s", i.ip, endpoint))
+	if err != nil {
+		return 0, []byte{}, err
+	}
+
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(data))
+	if err != nil {
+		return 0, []byte{}, err
+	}
+
+	for _, cookie := range i.httpClient.Jar.Cookies(u) {
+		if cookie.Name == "-http-session-" || cookie.Name == "tokenvalue" {
+			req.AddCookie(cookie)
+		}
+	}
+	req.Header.Add("XSRF-TOKEN", i.xsrfToken)
+
+	if formDataContentType != "" {
+		// Set multipart form content type
+		req.Header.Set("Content-Type", formDataContentType)
+	}
+
+	if log.GetLevel() == log.TraceLevel {
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err == nil {
+			log.Println(fmt.Sprintf("[Request] https://%s/%s", i.ip, endpoint))
+			log.Println(">>>>>>>>>>>>>>>")
+			log.Printf("%s\n\n", dump)
+			log.Println(">>>>>>>>>>>>>>>")
+		}
+	}
+
+	resp, err := i.httpClient.Do(req)
+	if err != nil {
+		return 0, []byte{}, err
+	}
+	defer resp.Body.Close()
+	if log.GetLevel() == log.TraceLevel {
+		dump, err := httputil.DumpResponse(resp, true)
+		if err == nil {
+			log.Println("[Response]")
+			log.Println("<<<<<<<<<<<<<<")
+			log.Printf("%s\n\n", dump)
+			log.Println("<<<<<<<<<<<<<<")
+		}
+	}
+
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, []byte{}, err
+	}
+
+	return resp.StatusCode, body, err
 }
 
 // Nics returns all found Nics in the device
@@ -297,7 +356,6 @@ func (i *IDrac9) Status() (status string, err error) {
 	iDracHealthStatus := &dell.IDracHealthStatus{}
 	err = json.Unmarshal(payload, iDracHealthStatus)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return status, err
 	}
 
@@ -326,7 +384,6 @@ func (i *IDrac9) PowerKw() (power float64, err error) {
 	iDracPowerData := &dell.IDracPowerData{}
 	err = json.Unmarshal(payload, iDracPowerData)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return power, err
 	}
 
@@ -455,7 +512,6 @@ func (i *IDrac9) License() (name string, licType string, err error) {
 	iDracLicense := &dell.IDracLicense{}
 	err = json.Unmarshal(payload, iDracLicense)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return name, licType, err
 	}
 
@@ -508,7 +564,6 @@ func (i *IDrac9) TempC() (temp int, err error) {
 	iDracTemp := &dell.IDracTemp{}
 	err = json.Unmarshal(payload, iDracTemp)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return temp, err
 	}
 
@@ -582,7 +637,6 @@ func (i *IDrac9) Psus() (psus []*devices.Psu, err error) {
 	iDracRoot := &dell.IDracRoot{}
 	err = xml.Unmarshal(payload, iDracRoot)
 	if err != nil {
-		httpclient.DumpInvalidPayload(url, i.ip, payload)
 		return psus, err
 	}
 
@@ -812,4 +866,14 @@ func (i *IDrac9) Disks() (disks []*devices.Disk, err error) {
 func (i *IDrac9) UpdateCredentials(username string, password string) {
 	i.username = username
 	i.password = password
+}
+
+// GetConfigure returns itself as a configure interface to avoid using reflect
+func (i *IDrac9) GetConfigure() devices.Configure {
+	return i
+}
+
+// GetCollection returns itself as a configure interface to avoid using reflect
+func (i *IDrac9) GetCollection() devices.BmcCollection {
+	return i
 }

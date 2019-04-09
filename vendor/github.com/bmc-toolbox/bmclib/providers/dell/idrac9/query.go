@@ -1,11 +1,36 @@
 package idrac9
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"net"
+	"time"
 
 	"github.com/bmc-toolbox/bmclib/internal/helper"
 	log "github.com/sirupsen/logrus"
 )
+
+// CurrentHTTPSCert returns the current x509 certficates configured on the BMC
+// The bool value returned indicates if the BMC supports CSR generation.
+// CurrentHTTPSCert implements the Configure interface.
+func (i *IDrac9) CurrentHTTPSCert() ([]*x509.Certificate, bool, error) {
+
+	dialer := &net.Dialer{
+		Timeout: time.Duration(10) * time.Second,
+	}
+
+	conn, err := tls.DialWithDialer(dialer, "tcp", i.ip+":"+"443", &tls.Config{InsecureSkipVerify: true})
+
+	if err != nil {
+		return []*x509.Certificate{{}}, true, err
+	}
+
+	defer conn.Close()
+
+	return conn.ConnectionState().PeerCertificates, true, nil
+
+}
 
 // Screenshot grab screen preview.
 func (i *IDrac9) Screenshot() (response []byte, extension string, err error) {

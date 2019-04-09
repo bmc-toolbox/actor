@@ -1,0 +1,23 @@
+version: '3'
+services:
+
+  actor:
+    build: .
+    image: actor
+
+    volumes:
+      - ./actor.sample.yaml:/etc/bmc-toolbox/actor.yaml:ro
+      # For /tmp/actor
+      - /tmp:/tmp
+
+  server:
+    image: actor
+    command: server
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./actor.sample.yaml:/etc/bmc-toolbox/actor.yaml:ro
+      # For /tmp/actor
+      - /tmp:/tmp

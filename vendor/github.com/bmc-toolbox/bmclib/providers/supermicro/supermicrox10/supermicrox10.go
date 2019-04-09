@@ -69,7 +69,7 @@ func (s *SupermicroX10) get(endpoint string) (payload []byte, err error) {
 		}
 	}
 
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
 			log.Println(fmt.Sprintf("[Request] https://%s/%s", bmcURL, endpoint))
@@ -83,9 +83,9 @@ func (s *SupermicroX10) get(endpoint string) (payload []byte, err error) {
 	if err != nil {
 		return payload, err
 	}
-
 	defer resp.Body.Close()
-	if log.GetLevel() == log.DebugLevel {
+
+	if log.GetLevel() == log.TraceLevel {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err == nil {
 			log.Println("[Response]")
@@ -105,6 +105,83 @@ func (s *SupermicroX10) get(endpoint string) (payload []byte, err error) {
 	}
 
 	return payload, err
+}
+
+// posts a urlencoded form to the given endpoint
+// nolint: gocyclo
+func (s *SupermicroX10) post(endpoint string, urlValues *url.Values, form []byte, formDataContentType string) (statusCode int, err error) {
+
+	err = s.httpLogin()
+	if err != nil {
+		return statusCode, err
+	}
+
+	u, err := url.Parse(fmt.Sprintf("https://%s/cgi/%s", s.ip, endpoint))
+	if err != nil {
+		return statusCode, err
+	}
+
+	var req *http.Request
+
+	if formDataContentType == "" {
+
+		req, err = http.NewRequest("POST", u.String(), strings.NewReader(urlValues.Encode()))
+		if err != nil {
+			return statusCode, err
+		}
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	} else {
+
+		req, err = http.NewRequest("POST", u.String(), bytes.NewReader(form))
+		if err != nil {
+			return statusCode, err
+		}
+		// Set multipart form content type
+		req.Header.Set("Content-Type", formDataContentType)
+	}
+
+	for _, cookie := range s.httpClient.Jar.Cookies(u) {
+		if cookie.Name == "SID" && cookie.Value != "" {
+			req.AddCookie(cookie)
+		}
+	}
+
+	if log.GetLevel() == log.TraceLevel {
+		fmt.Println(fmt.Sprintf("https://%s/cgi/%s", s.ip, endpoint))
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err == nil {
+			log.Println("[Request]")
+			log.Println(">>>>>>>>>>>>>>>")
+			log.Printf("%s\n\n", dump)
+			log.Println(">>>>>>>>>>>>>>>")
+		}
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return statusCode, err
+	}
+	defer resp.Body.Close()
+
+	if log.GetLevel() == log.TraceLevel {
+		dump, err := httputil.DumpResponse(resp, true)
+		if err == nil {
+			log.Println("[Response]")
+			log.Println("<<<<<<<<<<<<<<")
+			log.Printf("%s\n\n", dump)
+			log.Println("<<<<<<<<<<<<<<")
+		}
+	}
+
+	statusCode = resp.StatusCode
+	_, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return statusCode, err
+	}
+	//fmt.Printf("-->> %d\n", resp.StatusCode)
+	//fmt.Printf("%s\n", body)
+	return statusCode, err
 }
 
 func (s *SupermicroX10) query(requestType string) (ipmi *supermicro.IPMI, err error) {
@@ -130,7 +207,7 @@ func (s *SupermicroX10) query(requestType string) (ipmi *supermicro.IPMI, err er
 			req.AddCookie(cookie)
 		}
 	}
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == log.TraceLevel {
 		log.Println(fmt.Sprintf("https://%s/cgi/%s", bmcURL, s.ip))
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
@@ -151,8 +228,8 @@ func (s *SupermicroX10) query(requestType string) (ipmi *supermicro.IPMI, err er
 	if err != nil {
 		return ipmi, err
 	}
-	defer resp.Body.Close()
-	if log.GetLevel() == log.DebugLevel {
+
+	if log.GetLevel() == log.TraceLevel {
 		log.Println(fmt.Sprintf("https://%s/cgi/%s", bmcURL, s.ip))
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err == nil {
@@ -166,7 +243,6 @@ func (s *SupermicroX10) query(requestType string) (ipmi *supermicro.IPMI, err er
 	ipmi = &supermicro.IPMI{}
 	err = xml.Unmarshal(payload, ipmi)
 	if err != nil {
-		httpclient.DumpInvalidPayload(requestType, s.ip, payload)
 		return ipmi, err
 	}
 
@@ -206,7 +282,7 @@ func (s *SupermicroX10) Model() (model string, err error) {
 	}
 
 	if ipmi.FruInfo != nil && ipmi.FruInfo.Board != nil {
-		return ipmi.FruInfo.Board.ProdName, err
+		return ipmi.FruInfo.Board.PartNum, err
 	}
 
 	return model, err
@@ -242,7 +318,16 @@ func (s *SupermicroX10) Name() (name string, err error) {
 
 // Status returns health string status from the bmc
 func (s *SupermicroX10) Status() (health string, err error) {
-	return "NotSupported", err
+	ipmi, err := s.query("SENSOR_INFO_FOR_SYS_HEALTH.XML=(1,ff)")
+	if err != nil {
+		return health, err
+	}
+
+	if ipmi.HealthInfo != nil && ipmi.HealthInfo.Health == "1" {
+		return "OK", err
+	}
+
+	return "Unhealthy", err
 }
 
 // Memory returns the total amount of memory of the server
@@ -366,19 +451,21 @@ func (s *SupermicroX10) Nics() (nics []*devices.Nic, err error) {
 		return nics, err
 	}
 
-	bmcNic := &devices.Nic{
-		Name:       "bmc",
-		MacAddress: ipmi.GenericInfo.Generic.BmcMac,
-	}
+	if ipmi != nil && ipmi.GenericInfo != nil && ipmi.GenericInfo.Generic != nil {
+		bmcNic := &devices.Nic{
+			Name:       "bmc",
+			MacAddress: ipmi.GenericInfo.Generic.BmcMac,
+		}
 
-	nics = append(nics, bmcNic)
+		nics = append(nics, bmcNic)
+	}
 
 	ipmi, err = s.query("Get_PlatformInfo.XML=(0,0)")
 	if err != nil {
 		return nics, err
 	}
 
-	// TODO: (ncode) This needs to become dinamic somehow
+	// TODO: (ncode) This needs to become dynamic somehow
 	if ipmi.PlatformInfo != nil {
 		if ipmi.PlatformInfo.MbMacAddr1 != "" {
 			bmcNic := &devices.Nic{
@@ -582,4 +669,14 @@ func (s *SupermicroX10) Disks() (disks []*devices.Disk, err error) {
 func (s *SupermicroX10) UpdateCredentials(username string, password string) {
 	s.username = username
 	s.password = password
+}
+
+// GetConfigure returns itself as a configure interface to avoid using reflect
+func (s *SupermicroX10) GetConfigure() devices.Configure {
+	return s
+}
+
+// GetCollection returns itself as a configure interface to avoid using reflect
+func (s *SupermicroX10) GetCollection() devices.BmcCollection {
+	return s
 }

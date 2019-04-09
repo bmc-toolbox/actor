@@ -13,13 +13,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-func connectToChassis(username string, password string, host string) (bmc devices.BmcChassis, err error) {
-	conn, err := discover.ScanAndConnect(host, viper.GetString("bmc_user"), viper.GetString("bmc_pass"))
+func connectToChassis(username string, password string, host string) (bmc devices.Cmc, err error) {
+	conn, err := discover.ScanAndConnect(host, username, password)
 	if err != nil {
 		return bmc, err
 	}
 
-	if bmc, ok := conn.(devices.BmcChassis); ok {
+	if bmc, ok := conn.(devices.Cmc); ok {
 		if bmc.IsActive() {
 			return bmc, err
 		}

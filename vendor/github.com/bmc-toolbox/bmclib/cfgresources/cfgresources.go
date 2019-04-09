@@ -1,5 +1,7 @@
 package cfgresources
 
+import "time"
+
 // SetupChassis struct holds attributes for one time chassis setup.
 type SetupChassis struct {
 	FlexAddress         *flexAddress       `yaml:"flexAddress"`
@@ -18,7 +20,7 @@ type ResourcesConfig struct {
 	Network      *Network      `yaml:"network"`
 	Syslog       *Syslog       `yaml:"syslog"`
 	User         []*User       `yaml:"user"`
-	Ssl          *Ssl          `yaml:"ssl"`
+	HTTPSCert    *HTTPSCert    `yaml:"httpsCert"`
 	Ntp          *Ntp          `yaml:"ntp"`
 	Bios         *Bios         `yaml:"bios"`
 	Supermicro   *Supermicro   `yaml:"supermicro"` //supermicro specific config, example of issue #34
@@ -102,24 +104,43 @@ type LdapGroup struct {
 	Enable      bool   `yaml:"enable"`
 }
 
-// Ssl struct holds BMC SSL configuration.
-type Ssl struct {
-	CertFile string `yaml:"certfile"`
-	KeyFile  string `yaml:"keyfile"`
+// HTTPSCert struct holds BMC HTTPs cert configuration.
+type HTTPSCert struct {
+	// Renew cert if it will expire in this time period.
+	RenewBeforeExpiry time.Duration `yaml:"renewBeforeExpiry"`
+	// Validate these attributes when renewing certs
+	ValidateAttributes []string             `yaml:"validateAttributes"`
+	Attributes         *HTTPSCertAttributes `yaml:"attributes"`
+}
+
+// HTTPSCertAttributes declares attributes that are part of a cert.
+type HTTPSCertAttributes struct {
+	CommonName       string `yaml:"commonName"`
+	OrganizationName string `yaml:"organizationName"`
+	OrganizationUnit string `yaml:"organizationUnit"`
+	Locality         string `yaml:"locality"`
+	StateName        string `yaml:"stateName"`
+	CountryCode      string `yaml:"countryCode"`
+	Email            string `yaml:"email"`
+	SubjectAltName   string `yaml:"subjectAltName"`
 }
 
 // Network struct holds BMC network configuration.
 type Network struct {
-	Hostname    string `yaml:"hostname"`
-	DNSFromDHCP bool   `yaml:"dnsFromDhcp"`
-	SshEnable   bool   `yaml:"sshEnable"`
-	SshPort     int    `yaml:"sshPort"`
-	SolEnable   bool   `yaml:"solEnable"` //Serial over lan
-	IpmiEnable  bool   `yaml:"ipmiEnable"`
-	DhcpEnable  bool   `yaml:"dhcpEnable"`
-	IpmiPort    int    `yaml:"ipmiPort"`
+	Hostname       string `yaml:"hostname"`
+	DNSFromDHCP    bool   `yaml:"dnsFromDhcp"`
+	SSHEnable      bool   `yaml:"sshEnable"`
+	SSHPort        int    `yaml:"sshPort"`
+	SolEnable      bool   `yaml:"solEnable"` //Serial over lan
+	IpmiEnable     bool   `yaml:"ipmiEnable"`
+	DhcpEnable     bool   `yaml:"dhcpEnable"`
+	IpmiPort       int    `yaml:"ipmiPort"`
+	KVMMediaPort   int    `yaml:"kvmMediaPort"`
+	KVMConsolePort int    `yaml:"kvmConsolePort"`
+	DDNSEnable     bool   `yaml:"ddnsEnable"`
 }
 
+// Ntp struct holds BMC NTP configuration.
 type Ntp struct {
 	Enable   bool   `yaml:"enable"`
 	Server1  string `yaml:"server1"`

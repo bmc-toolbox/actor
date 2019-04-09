@@ -54,7 +54,7 @@ func (i *Ipmi) findBin(binary string) (binaryPath string, err error) {
 		}
 	}
 
-	return binaryPath, fmt.Errorf("Unable to find binary: %v", binary)
+	return binaryPath, fmt.Errorf("unable to find binary: %v", binary)
 }
 
 // PowerCycle reboots the machine via bmc
