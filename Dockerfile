@@ -22,4 +22,3 @@ EXPOSE 8000
 USER actor
 
 ENTRYPOINT ["/usr/bin/actor"]
-CMD ["--config", "./actor.sample.yaml"]
