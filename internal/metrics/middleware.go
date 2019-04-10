@@ -30,44 +30,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
-
-// Standard default metrics
-//	counter, counter_vec, gauge, gauge_vec,
-//	histogram, histogram_vec, summary, summary_vec
-var reqCnt = &Metric{
-	ID:          "reqCnt",
-	Name:        "requests_total",
-	Description: "How many HTTP requests processed, partitioned by status code and HTTP method.",
-	Type:        "counter_vec",
-	Args:        []string{"code", "method", "host", "url"}}
-
-var reqDur = &Metric{
-	ID:          "reqDur",
-	Name:        "request_duration_seconds",
-	Description: "The HTTP request latencies in seconds.",
-	Type:        "summary"}
-
-var resSz = &Metric{
-	ID:          "resSz",
-	Name:        "response_size_bytes",
-	Description: "The HTTP response sizes in bytes.",
-	Type:        "summary"}
-
-var reqSz = &Metric{
-	ID:          "reqSz",
-	Name:        "request_size_bytes",
-	Description: "The HTTP request sizes in bytes.",
-	Type:        "summary"}
-
-var standardMetrics = []*Metric{
-	reqCnt,
-	reqDur,
-	resSz,
-	reqSz,
-}
 
 /*
 RequestCounterURLLabelMappingFn is a function which can be supplied to the middleware to control
@@ -88,38 +51,14 @@ which would map "/customer/alice" and "/customer/bob" to their template "/custom
 */
 type RequestCounterURLLabelMappingFn func(c *gin.Context) string
 
-// Metric is a definition for the name, description, type, ID, and
-// prometheus.Collector type (i.e. CounterVec, Summary, etc) of each metric
-type Metric struct {
-	MetricCollector prometheus.Collector
-	ID              string
-	Name            string
-	Description     string
-	Type            string
-	Args            []string
-}
-
 // Metrics contains the metrics gathered by the instance
 type Metrics struct {
-	reqCnt               *prometheus.CounterVec
-	reqDur, reqSz, resSz prometheus.Summary
-
-	MetricsList []*Metric
-
 	ReqCntURLLabelMappingFn RequestCounterURLLabelMappingFn
 }
 
 // NewMetrics generates a new set of metrics
 func NewMetrics(expandedParams []string) *Metrics {
-
-	var metricsList []*Metric
-
-	for _, metric := range standardMetrics {
-		metricsList = append(metricsList, metric)
-	}
-
-	p := &Metrics{
-		MetricsList: metricsList,
+	return &Metrics{
 		ReqCntURLLabelMappingFn: func(c *gin.Context) string {
 			url := c.Request.URL.EscapedPath() // i.e. by default do nothing, i.e. return URL as is
 			for _, p := range c.Params {
@@ -131,10 +70,6 @@ func NewMetrics(expandedParams []string) *Metrics {
 			return url
 		},
 	}
-
-	p.registerMetrics()
-
-	return p
 }
 
 func contains(slice []string, s string) bool {
@@ -146,96 +81,7 @@ func contains(slice []string, s string) bool {
 	return false
 }
 
-// NewMetric associates prometheus.Collector based on Metric.Type
-func NewMetric(m *Metric) prometheus.Collector {
-	var metric prometheus.Collector
-	switch m.Type {
-	case "counter_vec":
-		metric = prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-			m.Args,
-		)
-	case "counter":
-		metric = prometheus.NewCounter(
-			prometheus.CounterOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-		)
-	case "gauge_vec":
-		metric = prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-			m.Args,
-		)
-	case "gauge":
-		metric = prometheus.NewGauge(
-			prometheus.GaugeOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-		)
-	case "histogram_vec":
-		metric = prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-			m.Args,
-		)
-	case "histogram":
-		metric = prometheus.NewHistogram(
-			prometheus.HistogramOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-		)
-	case "summary_vec":
-		metric = prometheus.NewSummaryVec(
-			prometheus.SummaryOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-			m.Args,
-		)
-	case "summary":
-		metric = prometheus.NewSummary(
-			prometheus.SummaryOpts{
-				Name: m.Name,
-				Help: m.Description,
-			},
-		)
-	}
-	return metric
-}
-
-func (p *Metrics) registerMetrics() {
-
-	for _, metricDef := range p.MetricsList {
-		metric := NewMetric(metricDef)
-		if err := prometheus.Register(metric); err != nil {
-			log.WithError(err).Errorf("%s could not be registered in Metrics", metricDef.Name)
-		}
-		switch metricDef {
-		case reqCnt:
-			p.reqCnt = metric.(*prometheus.CounterVec)
-		case reqDur:
-			p.reqDur = metric.(prometheus.Summary)
-		case resSz:
-			p.resSz = metric.(prometheus.Summary)
-		case reqSz:
-			p.reqSz = metric.(prometheus.Summary)
-		}
-		metricDef.MetricCollector = metric
-	}
-}
-
-func (p *Metrics) HandlerFunc() gin.HandlerFunc {
+func (m *Metrics) HandlerFunc() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// ignore mechanism for particular endpoint
 		//if c.Request.URL.String() == metricsPath {
@@ -248,20 +94,22 @@ func (p *Metrics) HandlerFunc() gin.HandlerFunc {
 
 		c.Next()
 
+		elapsed := time.Since(start)
 		status := strconv.Itoa(c.Writer.Status())
-		elapsed := float64(time.Since(start)) / float64(time.Second)
-		resSz := float64(c.Writer.Size())
+		method := c.Request.Method
+		resSz := int64(c.Writer.Size())
+		url := m.ReqCntURLLabelMappingFn(c)
+		// replace slashes with underscores as they will be replaced by dots otherwise
+		url = strings.Replace(url, "/", "_", -1)
 
-		p.reqDur.Observe(elapsed)
-		url := p.ReqCntURLLabelMappingFn(c)
-		p.reqCnt.WithLabelValues(status, c.Request.Method, c.Request.Host, url).Inc()
-		p.reqSz.Observe(float64(reqSz))
-		p.resSz.Observe(resSz)
+		UpdateTimer([]string{method, status, url, "requests"}, elapsed)
+		UpdateHistogram([]string{method, status, url, "req_size"}, reqSz)
+		UpdateHistogram([]string{method, status, url, "resp_size"}, resSz)
 	}
 }
 
 // From https://github.com/DanielHeckrath/gin-prometheus/blob/master/gin_prometheus.go
-func computeApproximateRequestSize(r *http.Request) int {
+func computeApproximateRequestSize(r *http.Request) int64 {
 	s := 0
 	if r.URL != nil {
 		s = len(r.URL.String())
@@ -282,5 +130,5 @@ func computeApproximateRequestSize(r *http.Request) int {
 	if r.ContentLength != -1 {
 		s += int(r.ContentLength)
 	}
-	return s
+	return int64(s)
 }
