@@ -74,7 +74,7 @@ github.com/go-playground/locales
 github.com/go-playground/locales/currency
 # github.com/go-playground/universal-translator v0.0.0-20170327191703-71201497bace
 github.com/go-playground/universal-translator
-# github.com/golang/protobuf v0.0.0-20180328163153-e09c5db29600
+# github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 # github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135
 github.com/google/go-querystring/query
@@ -143,7 +143,7 @@ golang.org/x/crypto/internal/chacha20
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/internal/subtle
-# golang.org/x/net v0.0.0-20180110232232-ab555f366c45
+# golang.org/x/net v0.0.0-20181201002055-351d144fa1fc
 golang.org/x/net/publicsuffix
 # golang.org/x/sys v0.0.0-20181218192612-074acd46bca6
 golang.org/x/sys/unix

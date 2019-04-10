@@ -12,7 +12,7 @@ require (
 	github.com/gin-gonic/gin v0.0.0-20180329063307-6d913fc343cf
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.0.0-20170327191703-71201497bace // indirect
-	github.com/golang/protobuf v0.0.0-20180328163153-e09c5db29600 // indirect
+	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 // indirect
@@ -31,7 +31,7 @@ require (
 	github.com/spf13/viper v0.0.0-20181107110859-ae103d7e593e
 	github.com/ugorji/go v0.0.0-20180307152341-02537d3a3e32 // indirect
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
-	golang.org/x/net v0.0.0-20180110232232-ab555f366c45 // indirect
+	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 	golang.org/x/sys v0.0.0-20181218192612-074acd46bca6 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
