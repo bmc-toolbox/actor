@@ -99,6 +99,10 @@ func (m *Metrics) HandlerFunc() gin.HandlerFunc {
 		method := c.Request.Method
 		resSz := int64(c.Writer.Size())
 		url := m.ReqCntURLLabelMappingFn(c)
+		// drop non-existent urls to prevent creating a metric for each such url
+		if status == "404" {
+			url = "all"
+		}
 		// replace slashes with underscores as they will be replaced by dots otherwise
 		url = strings.Replace(url, "/", "_", -1)
 
