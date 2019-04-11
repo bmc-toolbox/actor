@@ -811,8 +811,6 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}, opts ...DecoderConf
 		return err
 	}
 
-	v.insensitiviseMaps()
-
 	return nil
 }
 
@@ -827,8 +825,6 @@ func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error
 	if err != nil {
 		return err
 	}
-
-	v.insensitiviseMaps()
 
 	return nil
 }
@@ -871,8 +867,6 @@ func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	v.insensitiviseMaps()
 
 	return nil
 }
@@ -1259,13 +1253,21 @@ func (v *Viper) ReadConfig(in io.Reader) error {
 // MergeConfig merges a new configuration with an existing config.
 func MergeConfig(in io.Reader) error { return v.MergeConfig(in) }
 func (v *Viper) MergeConfig(in io.Reader) error {
-	if v.config == nil {
-		v.config = make(map[string]interface{})
-	}
 	cfg := make(map[string]interface{})
 	if err := v.unmarshalReader(in, cfg); err != nil {
 		return err
 	}
+	return v.MergeConfigMap(cfg)
+}
+
+// MergeConfigMap merges the configuration from the map given with an existing config.
+// Note that the map given may be modified.
+func MergeConfigMap(cfg map[string]interface{}) error { return v.MergeConfigMap(cfg) }
+func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
+	if v.config == nil {
+		v.config = make(map[string]interface{})
+	}
+	insensitiviseMap(cfg)
 	mergeMaps(cfg, v.config, nil)
 	return nil
 }
@@ -1569,13 +1571,6 @@ func (v *Viper) WatchRemoteConfig() error {
 
 func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
-}
-
-func (v *Viper) insensitiviseMaps() {
-	insensitiviseMap(v.config)
-	insensitiviseMap(v.defaults)
-	insensitiviseMap(v.override)
-	insensitiviseMap(v.kvstore)
 }
 
 // Retrieve the first found remote configuration.
