@@ -24,10 +24,34 @@ of the differences across vendors, into a single API.
 Since Actor is based on bmclib, for the list of supported vendors,
 https://github.com/bmc-toolbox/bmclib/blob/master/README.md
 
-##### Install
+##### How to run
 
-`go get github.com/bmc-toolbox/actor`
+###### Install binary
 
+```console
+go get github.com/bmc-toolbox/actor
+```
+
+###### Docker
+
+```console
+git clone github.com/bmc-toolbox/actor
+cd actor
+# build docker image with application
+docker-compose build actor
+# start server in background, accessable by address http://localhost:8000
+docker-compose up -d server
+```
+
+###### Build yourself
+
+```console
+git clone github.com/bmc-toolbox/actor
+cd actor
+go build
+# start server, accessable by address http://localhost:8000
+./actor --config actor.sample.yaml server
+```
 
 ###### Sequencing actions.
 

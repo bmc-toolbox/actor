@@ -11,3 +11,10 @@ s3:
   secret_access_key: my_super_accesss_key
   endpoint: https://my-custom-endpoint.example.com
 screenshot_storage: /tmp/actor
+metrics:
+  enabled: false
+  type: graphite
+  host: localhost
+  port: 2003
+  prefix:
+    server: actor.server

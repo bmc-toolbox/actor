@@ -1,11 +1,15 @@
 package server
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"time"
 
 	"html/template"
 
 	"github.com/GeertJohan/go.rice"
+	"github.com/bmc-toolbox/actor/internal/metrics"
 	"github.com/bmc-toolbox/actor/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -45,6 +49,24 @@ func Serve() {
 
 	router := gin.Default()
 
+	if viper.GetBool("metrics.enabled") {
+		err := metrics.Setup(
+			viper.GetString("metrics.type"),
+			viper.GetString("metrics.host"),
+			viper.GetInt("metrics.port"),
+			viper.GetString("metrics.prefix.server"),
+			time.Minute,
+		)
+		if err != nil {
+			fmt.Printf("Failed to set up monitoring: %s", err)
+			os.Exit(1)
+		}
+		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
+		p := metrics.NewMetrics([]string{})
+		router.Use(p.HandlerFunc())
+	}
+
 	router.SetHTMLTemplate(doc)
 	router.Static("/screenshot", viper.GetString("screenshot_storage"))
 	router.StaticFS("/static", staticBox.HTTPBox())
@@ -70,5 +92,8 @@ func Serve() {
 
 	router.POST("/chassis/:host/serial/:serial", routes.ChassisBladeExecuteActionsBySerial)
 
-	router.Run(viper.GetString("bind_to"))
+	err = router.Run(viper.GetString("bind_to"))
+	if err != nil {
+		log.Print(err)
+	}
 }

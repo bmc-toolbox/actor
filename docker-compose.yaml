@@ -21,3 +21,11 @@ services:
       - ./actor.sample.yaml:/etc/bmc-toolbox/actor.yaml:ro
       # For /tmp/actor
       - /tmp:/tmp
+
+  # for testing metrics
+  # use metrics.host=host.docker.internal under Docker for Mac\Windows
+  graphite:
+    image: graphiteapp/graphite-statsd
+    ports:
+      - "80:80"
+      - "2003-2004:2003-2004"
