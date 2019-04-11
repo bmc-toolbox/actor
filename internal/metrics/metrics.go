@@ -1,5 +1,6 @@
 // Copyright © 2018 Joel Rebello <joel.rebello@booking.com>
 // Copyright © 2018 Juliano Martinez <juliano.martinez@booking.com>
+// Copyright © 2019 Dmitry Verkhoturov <dmitry.verkhoturov@booking.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
