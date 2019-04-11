@@ -36,7 +36,6 @@ var (
 type emitter struct {
 	registry    gometrics.Registry
 	metricsChan chan metric
-	metricsData map[string]map[string]float64
 }
 
 // metric struct holds attributes for a metric.
@@ -53,9 +52,8 @@ func Setup(clientType string, host string, port int, prefix string, flushInterva
 	}
 
 	emm = &emitter{
-		registry:    gometrics.NewRegistry(),
+		registry:    gometrics.DefaultRegistry,
 		metricsChan: make(chan metric),
-		metricsData: make(map[string]map[string]float64),
 	}
 
 	//setup metrics client based on config
@@ -71,13 +69,13 @@ func Setup(clientType string, host string, port int, prefix string, flushInterva
 		return fmt.Errorf("no supported metrics client declared in config")
 	}
 
-	//go routine that records metricsData
+	//go routine that stores data
 	go emm.store()
 
 	return err
 }
 
-//- writes/updates metric key/vals to metricsData
+//- writes/updates metric key/vals to registry
 //- register and write metrics to the go-metrics registries.
 func (e *emitter) store() {
 	//A map of metric names to go-metrics registry
@@ -90,80 +88,51 @@ func (e *emitter) store() {
 			return
 		}
 
-		identifier := data.Key[0]
 		key := strings.Join(data.Key, ".")
-
-		_, keyExists := e.metricsData[identifier]
-		if !keyExists {
-			e.metricsData[identifier] = make(map[string]float64)
-		}
 
 		//register the metric with go-metrics,
 		//the metric key is used as the identifier.
-		_, registryExists := goMetricsRegistry[identifier]
+		_, registryExists := goMetricsRegistry[key]
 		if !registryExists {
 			switch data.Type {
 			case "counter":
-				c := gometrics.NewCounter()
-				gometrics.Register(key, c)
+				c := gometrics.GetOrRegister(key, gometrics.NewCounter())
 				goMetricsRegistry[key] = c
 			case "gauge":
-				g := gometrics.NewGauge()
-				gometrics.Register(key, g)
+				g := gometrics.GetOrRegister(key, gometrics.NewGauge())
 				goMetricsRegistry[key] = g
 			case "timer":
-				g := gometrics.NewTimer()
-				gometrics.Register(key, g)
-				goMetricsRegistry[key] = g
+				t := gometrics.GetOrRegister(key, gometrics.NewTimer())
+				goMetricsRegistry[key] = t
 			case "histogram":
-				g := gometrics.NewHistogram(gometrics.NewExpDecaySample(1028, 0.015))
-				gometrics.Register(key, g)
-				goMetricsRegistry[key] = g
+				h := gometrics.GetOrRegister(key, gometrics.NewHistogram(gometrics.NewExpDecaySample(1028, 0.015)))
+				goMetricsRegistry[key] = h
 			}
 		}
 
 		//based on the metric type, update the store/registry.
 		switch data.Type {
 		case "counter":
-			e.metricsData[identifier][key] += data.Value
-
 			//type assert metrics registry to its type - metrics.Counter
 			//type cast float64 metric value type to int64
 			goMetricsRegistry[key].(gometrics.Counter).Inc(
-				int64(e.metricsData[identifier][key]))
+				int64(data.Value))
 		case "gauge":
-			e.metricsData[identifier][key] = data.Value
-
 			//type assert metrics registry to its type - metrics.Gauge
 			//type cast float64 metric value type to int64
 			goMetricsRegistry[key].(gometrics.Gauge).Update(
-				int64(e.metricsData[identifier][key]))
+				int64(data.Value))
 		case "timer":
-			e.metricsData[identifier][key] = data.Value
-
 			//type assert metrics registry to its type - metrics.Timer
-			//type cast float64 metric value type to int64
+			//type cast float64 metric value type to time.Duration
 			goMetricsRegistry[key].(gometrics.Timer).Update(
-				time.Duration(e.metricsData[identifier][key]))
+				time.Duration(data.Value))
 		case "histogram":
-			e.metricsData[identifier][key] = data.Value
-
 			//type assert metrics registry to its type - metrics.Histogram
 			//type cast float64 metric value type to int64
 			goMetricsRegistry[key].(gometrics.Histogram).Update(
-				int64(e.metricsData[identifier][key]))
+				int64(data.Value))
 		}
-	}
-}
-
-//Logs current metrics
-func (e *emitter) dumpStats() {
-	for source, metricsTmp := range e.metricsData {
-		var metric string
-		for k, v := range metricsTmp {
-			metric += fmt.Sprintf("%s: %f ", k, v)
-		}
-		log.WithFields(log.Fields{"data": metric, "source": source}).Info("metric")
 	}
 }
 
@@ -231,6 +200,6 @@ func Close(printStats bool) {
 	close(emm.metricsChan)
 
 	if printStats {
-		emm.dumpStats()
+		log.Info(emm.registry.GetAll())
 	}
 }
