@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package gin_metrics
 
 import (
 	"fmt"
@@ -23,19 +23,20 @@ import (
 	"time"
 
 	"github.com/cyberdelia/go-metrics-graphite"
-	gometrics "github.com/rcrowley/go-metrics"
+	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	emm *emitter
+	emm            *emitter
+	graphiteConfig graphite.Config
 )
 
 // emitter struct holds attributes for the metrics emitter.
 // we can convert int64 to float64, but not other way around
 // because of that we store the metrics data in float64
 type emitter struct {
-	registry    gometrics.Registry
+	registry    metrics.Registry
 	metricsChan chan metric
 }
 
@@ -53,9 +54,11 @@ func Setup(clientType string, host string, port int, prefix string, flushInterva
 	}
 
 	emm = &emitter{
-		registry:    gometrics.DefaultRegistry,
+		registry:    metrics.DefaultRegistry,
 		metricsChan: make(chan metric),
 	}
+
+	graphiteConfig = graphite.Config{}
 
 	//setup metrics client based on config
 	switch clientType {
@@ -64,8 +67,16 @@ func Setup(clientType string, host string, port int, prefix string, flushInterva
 		if err != nil {
 			return fmt.Errorf("error resolving tcp addr -> %s", err.Error())
 		}
+		graphiteConfig = graphite.Config{
+			Addr:          addr,
+			Registry:      emm.registry,
+			FlushInterval: flushInterval,
+			DurationUnit:  time.Nanosecond,
+			Prefix:        prefix,
+			Percentiles:   []float64{0.5, 0.75, 0.95, 0.99, 0.999},
+		}
 
-		go graphite.Graphite(gometrics.DefaultRegistry, flushInterval, prefix, addr)
+		go graphite.WithConfig(graphiteConfig)
 	default:
 		return fmt.Errorf("no supported metrics client declared in config")
 	}
@@ -80,7 +91,6 @@ func Setup(clientType string, host string, port int, prefix string, flushInterva
 //- register and write metrics to the go-metrics registries.
 func (e *emitter) store() {
 	//A map of metric names to go-metrics registry
-	//the keys to this map could be of type metrics.Counter/metrics.Gauge
 	goMetricsRegistry := make(map[string]interface{})
 
 	for {
@@ -97,16 +107,16 @@ func (e *emitter) store() {
 		if !registryExists {
 			switch data.Type {
 			case "counter":
-				c := gometrics.GetOrRegister(key, gometrics.NewCounter())
+				c := metrics.GetOrRegister(key, metrics.NewCounter())
 				goMetricsRegistry[key] = c
 			case "gauge":
-				g := gometrics.GetOrRegister(key, gometrics.NewGauge())
+				g := metrics.GetOrRegister(key, metrics.NewGauge())
 				goMetricsRegistry[key] = g
 			case "timer":
-				t := gometrics.GetOrRegister(key, gometrics.NewTimer())
+				t := metrics.GetOrRegister(key, metrics.NewTimer())
 				goMetricsRegistry[key] = t
 			case "histogram":
-				h := gometrics.GetOrRegister(key, gometrics.NewHistogram(gometrics.NewExpDecaySample(1028, 0.015)))
+				h := metrics.GetOrRegister(key, metrics.NewHistogram(metrics.NewExpDecaySample(1028, 0.015)))
 				goMetricsRegistry[key] = h
 			}
 		}
@@ -116,22 +126,22 @@ func (e *emitter) store() {
 		case "counter":
 			//type assert metrics registry to its type - metrics.Counter
 			//type cast float64 metric value type to int64
-			goMetricsRegistry[key].(gometrics.Counter).Inc(
+			goMetricsRegistry[key].(metrics.Counter).Inc(
 				int64(data.Value))
 		case "gauge":
 			//type assert metrics registry to its type - metrics.Gauge
 			//type cast float64 metric value type to int64
-			goMetricsRegistry[key].(gometrics.Gauge).Update(
+			goMetricsRegistry[key].(metrics.Gauge).Update(
 				int64(data.Value))
 		case "timer":
 			//type assert metrics registry to its type - metrics.Timer
 			//type cast float64 metric value type to time.Duration
-			goMetricsRegistry[key].(gometrics.Timer).Update(
+			goMetricsRegistry[key].(metrics.Timer).Update(
 				time.Duration(data.Value))
 		case "histogram":
 			//type assert metrics registry to its type - metrics.Histogram
 			//type cast float64 metric value type to int64
-			goMetricsRegistry[key].(gometrics.Histogram).Update(
+			goMetricsRegistry[key].(metrics.Histogram).Update(
 				int64(data.Value))
 		}
 	}
@@ -203,4 +213,9 @@ func Close(printStats bool) {
 	if printStats {
 		log.Info(emm.registry.GetAll())
 	}
+
+	if err := graphite.Once(graphiteConfig); nil != err {
+		log.Error(err)
+	}
 }
+

@@ -1,4 +1,5 @@
-// Copyright © 2019 Joel Rebello <joel.rebello@booking.com>
+// Copyright © 2018 Joel Rebello <joel.rebello@booking.com>
+// Copyright © 2019 Juliano Martinez <juliano.martinez@booking.com>
 // Copyright © 2019 Dmitry Verkhoturov <dmitry.verkhoturov@booking.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package gin_metrics
 
 import (
 	"reflect"
