@@ -9,8 +9,8 @@ import (
 	"html/template"
 
 	"github.com/GeertJohan/go.rice"
-	"github.com/bmc-toolbox/actor/internal/metrics"
 	"github.com/bmc-toolbox/actor/routes"
+	"github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -50,7 +50,7 @@ func Serve() {
 	router := gin.Default()
 
 	if viper.GetBool("metrics.enabled") {
-		err := metrics.Setup(
+		err := gin_metrics.Setup(
 			viper.GetString("metrics.type"),
 			viper.GetString("metrics.host"),
 			viper.GetInt("metrics.port"),
@@ -61,9 +61,9 @@ func Serve() {
 			fmt.Printf("Failed to set up monitoring: %s", err)
 			os.Exit(1)
 		}
-		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
-		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
-		p := metrics.NewMetrics([]string{})
+		go gin_metrics.Scheduler(time.Minute, gin_metrics.GoRuntimeStats, []string{""})
+		go gin_metrics.Scheduler(time.Minute, gin_metrics.MeasureRuntime, []string{"uptime"}, time.Now())
+		p := gin_metrics.NewMetrics([]string{})
 		router.Use(p.HandlerFunc())
 	}
 
