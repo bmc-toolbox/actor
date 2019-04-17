@@ -62,10 +62,10 @@ func Serve() {
 			fmt.Printf("Failed to set up monitoring: %s", err)
 			os.Exit(1)
 		}
-		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{""})
+		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{})
 		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
 		p := middleware.NewMetrics([]string{})
-		router.Use(p.HandlerFunc())
+		router.Use(p.HandlerFunc([]string{"/"}, true))
 	}
 
 	router.SetHTMLTemplate(doc)
