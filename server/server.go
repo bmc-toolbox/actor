@@ -65,7 +65,7 @@ func Serve() {
 		go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{})
 		go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
 		p := middleware.NewMetrics([]string{})
-		router.Use(p.HandlerFunc([]string{"/"}, true))
+		router.Use(p.HandlerFunc([]string{"http"}, []string{"/"}, true))
 	}
 
 	router.SetHTMLTemplate(doc)
