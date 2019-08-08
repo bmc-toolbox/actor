@@ -1,0 +1,13 @@
+[Unit]
+Description=Actor API
+
+[Service]
+Type=simple
+Environment=STNORESTART=yes
+ExecStart=/usr/bin/actor server
+Restart=on-failure
+User=nobody
+Group=nobody
+
+[Install]
+WantedBy=multi-user.target
