@@ -13,6 +13,8 @@ github.com/bmc-toolbox/bmclib v0.2.7 h1:QIUjwIBOZ+MytEx1PxWgwzwg8u+evSHphdITXHvt
 github.com/bmc-toolbox/bmclib v0.2.7/go.mod h1:V1ynUIaaWF6Ycxs5/h1mhCURaYhu4rRWn2NsvP74/KA=
 github.com/bmc-toolbox/gin-go-metrics v0.0.0-20190425145145-130c9ad985ff h1:fcp5EaStADQBTjrYL4pUtn4xknLA3CqJKkQd1HSSEdQ=
 github.com/bmc-toolbox/gin-go-metrics v0.0.0-20190425145145-130c9ad985ff/go.mod h1:JgW/TlIv2rVW1dIFBSUY61L4Fz4fbSQco8hd8BDxOtw=
+github.com/bmc-toolbox/gin-go-metrics v0.0.1 h1:gtQ5CXe9Nz4xWgaliFF0lCPXte8hI0drpCH+5Y232pk=
+github.com/bmc-toolbox/gin-go-metrics v0.0.1/go.mod h1:JgW/TlIv2rVW1dIFBSUY61L4Fz4fbSQco8hd8BDxOtw=
 github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-etcd v2.0.0+incompatible/go.mod h1:Jez6KQU2B/sWsbdaef3ED8NzMklzPG4d5KIOhIy30Tk=
 github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=

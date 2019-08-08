@@ -7,7 +7,7 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/aws/aws-sdk-go v0.0.0-20190114232201-beaa15b1b227
 	github.com/bmc-toolbox/bmclib v0.2.7
-	github.com/bmc-toolbox/gin-go-metrics v0.0.0-20190425145145-130c9ad985ff
+	github.com/bmc-toolbox/gin-go-metrics v0.0.1
 	github.com/gin-gonic/gin v1.3.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.0.0
