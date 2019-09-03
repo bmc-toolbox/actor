@@ -64,7 +64,7 @@ func (i *Ipmi) PowerCycle() (status bool, err error) {
 		return false, fmt.Errorf("%v: %v", err, output)
 	}
 
-	if strings.HasPrefix(output, "Chassis Power Control: Reset") {
+	if strings.Contains(output, "Chassis Power Control: Reset") {
 		return true, err
 	}
 	return false, fmt.Errorf("%v: %v", err, output)
@@ -77,7 +77,7 @@ func (i *Ipmi) PowerCycleBmc() (status bool, err error) {
 		return false, fmt.Errorf("%v: %v", err, output)
 	}
 
-	if strings.HasPrefix(output, "Sent cold reset command to MC") {
+	if strings.Contains(output, "Sent cold reset command to MC") {
 		return true, err
 	}
 	return false, fmt.Errorf("%v: %v", err, output)
@@ -99,7 +99,7 @@ func (i *Ipmi) PowerOn() (status bool, err error) {
 		return false, fmt.Errorf("%v: %v", err, output)
 	}
 
-	if strings.HasPrefix(output, "Chassis Power Control: Up/On") {
+	if strings.Contains(output, "Chassis Power Control: Up/On") {
 		return true, err
 	}
 	return false, fmt.Errorf("%v: %v", err, output)
@@ -112,7 +112,7 @@ func (i *Ipmi) PowerOnForce() (status bool, err error) {
 		return false, fmt.Errorf("%v: %v", err, output)
 	}
 
-	if strings.HasPrefix(output, "Chassis Power Control: Up/On") {
+	if strings.Contains(output, "Chassis Power Control: Up/On") {
 		return true, err
 	}
 	return false, fmt.Errorf("%v: %v", err, output)
