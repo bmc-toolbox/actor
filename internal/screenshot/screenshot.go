@@ -71,7 +71,7 @@ func takeScreenShot(bmc devices.Bmc, host string) (payload []byte, fileName stri
 	fileName = fmt.Sprintf(
 		"%s-%s-%d.%s",
 		host,
-		bmc.BmcType(),
+		bmc.HardwareType(),
 		time.Now().Unix(),
 		extension,
 	)
