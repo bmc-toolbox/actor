@@ -33,7 +33,7 @@ func HostPowerStatus(c *gin.Context) {
 	}
 	if bmc, ok := conn.(devices.Bmc); ok {
 		defer bmc.Close()
-		status, err := bmc.PowerState()
+		status, err := bmc.IsOn()
 		if err != nil {
 			c.JSON(http.StatusExpectationFailed, gin.H{"action": "ison", "status": false, "message": err.Error()})
 			return
@@ -150,11 +150,7 @@ func HostExecuteActions(c *gin.Context) {
 				case actions.PowerCycle:
 					status, err = bmc.PowerCycle()
 				case actions.IsOn:
-					var answer string
-					answer, err = bmc.PowerState()
-					if answer == "on" {
-						status = true
-					}
+					status, err = bmc.IsOn()
 				case actions.PxeOnce:
 					status, err = bmc.PxeOnce()
 				case actions.PowerCycleBmc:
