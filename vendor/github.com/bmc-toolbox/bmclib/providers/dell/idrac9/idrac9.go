@@ -3,7 +3,6 @@ package idrac9
 import (
 	"bytes"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -275,28 +274,30 @@ func (i *IDrac9) Nics() (nics []*devices.Nic, err error) {
 		if component.Classname == "DCIM_NICView" {
 			var speed string
 			var up bool
+			var macAddress string
+			var name string
 			for _, property := range component.Properties {
 				if property.Name == "LinkSpeed" && property.Type == "uint8" && property.DisplayValue != "Unknown" {
 					speed = property.DisplayValue
 					up = true
+				} else if property.Name == "PermanentMACAddress" && property.Type == "string" {
+					macAddress = strings.ToLower(property.Value)
 				} else if property.Name == "ProductName" && property.Type == "string" {
-					data := strings.Split(property.Value, " - ")
-					if len(data) == 2 {
-						if nics == nil {
-							nics = make([]*devices.Nic, 0)
-						}
-
-						n := &devices.Nic{
-							Name:       data[0],
-							Speed:      speed,
-							Up:         up,
-							MacAddress: strings.ToLower(data[1]),
-						}
-						nics = append(nics, n)
-					} else {
-						err = multierror.Append(err, fmt.Errorf("invalid network card %s, please review", data))
-					}
+					name = strings.Split(property.Value, " - ")[0]
 				}
+			}
+
+			if macAddress != "" {
+				if nics == nil {
+					nics = make([]*devices.Nic, 0)
+				}
+				n := &devices.Nic{
+					Name:       name,
+					Speed:      speed,
+					Up:         up,
+					MacAddress: macAddress,
+				}
+				nics = append(nics, n)
 			}
 		} else if component.Classname == "DCIM_iDRACCardView" {
 			for _, property := range component.Properties {
@@ -328,6 +329,25 @@ func (i *IDrac9) Serial() (serial string, err error) {
 		if component.Classname == "DCIM_SystemView" {
 			for _, property := range component.Properties {
 				if property.Name == "NodeID" && property.Type == "string" {
+					return strings.ToLower(property.Value), err
+				}
+			}
+		}
+	}
+	return serial, err
+}
+
+// ChassisSerial returns the serial number of the chassis where the blade is attached
+func (i *IDrac9) ChassisSerial() (serial string, err error) {
+	err = i.loadHwData()
+	if err != nil {
+		return serial, err
+	}
+
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_SystemView" {
+			for _, property := range component.Properties {
+				if property.Name == "ChassisServiceTag" && property.Type == "string" {
 					return strings.ToLower(property.Value), err
 				}
 			}
@@ -381,13 +401,17 @@ func (i *IDrac9) PowerKw() (power float64, err error) {
 		return power, err
 	}
 
-	iDracPowerData := &dell.IDracPowerData{}
+	iDracPowerData := &dell.IDrac9PowerData{}
 	err = json.Unmarshal(payload, iDracPowerData)
 	if err != nil {
 		return power, err
 	}
 
-	return iDracPowerData.Root.Powermonitordata.PresentReading.Reading.Reading / 1000.00, err
+	if len(iDracPowerData.Root.Powermonitordata.PresentReading.Reading) == 0 {
+		return power, err
+	}
+
+	return iDracPowerData.Root.Powermonitordata.PresentReading.Reading[0].Reading / 1000.00, err
 }
 
 // PowerState returns the current power state of the machine
@@ -449,8 +473,8 @@ func (i *IDrac9) Name() (name string, err error) {
 	return name, err
 }
 
-// BmcVersion returns the version of the bmc we are running
-func (i *IDrac9) BmcVersion() (bmcVersion string, err error) {
+// Version returns the version of the bmc we are running
+func (i *IDrac9) Version() (bmcVersion string, err error) {
 	err = i.loadHwData()
 	if err != nil {
 		return bmcVersion, err
@@ -466,6 +490,71 @@ func (i *IDrac9) BmcVersion() (bmcVersion string, err error) {
 		}
 	}
 	return bmcVersion, err
+}
+
+// Slot returns the current slot within the chassis
+func (i *IDrac9) Slot() (slot int, err error) {
+	err = i.loadHwData()
+	if err != nil {
+		return -1, err
+	}
+
+	model, err := i.Model()
+	if err != nil {
+		return -1, err
+	}
+
+	if model == "PowerEdge C6420" {
+		return i.slotC6420()
+	}
+
+	for _, component := range i.iDracInventory.Component {
+		if component.Classname == "DCIM_SystemView" {
+			for _, property := range component.Properties {
+				if property.Name == "BaseBoardChassisSlot" && property.Type == "string" {
+					if property.Value == "NA" {
+						return -1, err
+					}
+					v := strings.Split(property.Value, " ")
+					slot, err = strconv.Atoi(v[1])
+					if err != nil {
+						return -1, err
+					}
+
+					return slot, err
+				}
+			}
+		}
+	}
+
+	return -1, err
+}
+
+// slotC6420 returns the current slot for the C6420 blade within the chassis
+func (i *IDrac9) slotC6420() (slot int, err error) {
+
+	var url = "sysmgmt/2012/server/configgroup/System.ServerTopology"
+	payload, err := i.get(url, nil)
+	if err != nil {
+		return -1, err
+	}
+
+	iDracSystemTopology := &dell.SystemTopology{}
+	err = json.Unmarshal(payload, iDracSystemTopology)
+	if err != nil {
+		return -1, err
+	}
+
+	if iDracSystemTopology.SystemServerTopology.BladeSlotNumInChassis == "" {
+		return -1, err
+	}
+
+	slot, err = strconv.Atoi(iDracSystemTopology.SystemServerTopology.BladeSlotNumInChassis)
+	if err != nil {
+		return -1, err
+	}
+
+	return slot, err
 }
 
 // Model returns the device model
@@ -487,8 +576,8 @@ func (i *IDrac9) Model() (model string, err error) {
 	return model, err
 }
 
-// BmcType returns the type of bmc we are talking to
-func (i *IDrac9) BmcType() (bmcType string) {
+// HardwareType returns the type of bmc we are talking to
+func (i *IDrac9) HardwareType() (bmcType string) {
 	return BMCType
 }
 
@@ -609,13 +698,18 @@ func (i *IDrac9) IsBlade() (isBlade bool, err error) {
 		return isBlade, err
 	}
 
-	model, err := i.Model()
+	serial, err := i.Serial()
 	if err != nil {
 		return isBlade, err
 	}
 
-	if strings.HasPrefix(model, "PowerEdge M") {
-		isBlade = true
+	chassisSerial, err := i.ChassisSerial()
+	if err != nil {
+		return isBlade, err
+	}
+
+	if serial != chassisSerial {
+		return true, err
 	}
 
 	return isBlade, err
@@ -628,35 +722,41 @@ func (i *IDrac9) Psus() (psus []*devices.Psu, err error) {
 		return psus, err
 	}
 
-	url := "data?get=powerSupplies"
-	payload, err := i.get(url, nil)
+	extraHeaders := &map[string]string{
+		"X-SYSMGMT-OPTIMIZE": "true",
+	}
+
+	url := "sysmgmt/2013/server/sensor/powersupplyunit"
+	payload, err := i.get(url, extraHeaders)
 	if err != nil {
 		return psus, err
 	}
 
-	iDracRoot := &dell.IDracRoot{}
-	err = xml.Unmarshal(payload, iDracRoot)
+	iDracPowersupplyunit := &dell.IDracPowersupplyunit{}
+	err = json.Unmarshal(payload, iDracPowersupplyunit)
 	if err != nil {
 		return psus, err
 	}
 
 	serial, _ := i.Serial()
 
-	for _, psu := range iDracRoot.PsSensorList {
+	for _, psu := range iDracPowersupplyunit.Powersupplyunits {
 		if psus == nil {
 			psus = make([]*devices.Psu, 0)
 		}
+
 		var status string
-		if psu.SensorHealth == 2 {
+		if psu.Health == 2 {
 			status = "OK"
 		} else {
 			status = "BROKEN"
 		}
 
 		p := &devices.Psu{
-			Serial:     fmt.Sprintf("%s_%s", serial, strings.Split(psu.Name, " ")[0]),
+			Serial:     strings.ToLower(fmt.Sprintf("%s_%s", serial, strings.Split(psu.Name, " ")[0])),
 			Status:     status,
-			CapacityKw: float64(psu.MaxWattage) / 1000.00,
+			PartNumber: strings.ToLower(psu.PartNumber),
+			CapacityKw: float64(psu.OutputWattage) / 1000.00,
 		}
 
 		psus = append(psus, p)
@@ -681,13 +781,13 @@ func (i *IDrac9) ServerSnapshot() (server interface{}, err error) { // nolint: g
 		blade := &devices.Blade{}
 		blade.Vendor = i.Vendor()
 		blade.BmcAddress = i.ip
-		blade.BmcType = i.BmcType()
+		blade.BmcType = i.HardwareType()
 
 		blade.Serial, err = i.Serial()
 		if err != nil {
 			return nil, err
 		}
-		blade.BmcVersion, err = i.BmcVersion()
+		blade.BmcVersion, err = i.Version()
 		if err != nil {
 			return nil, err
 		}
@@ -739,18 +839,26 @@ func (i *IDrac9) ServerSnapshot() (server interface{}, err error) { // nolint: g
 		if err != nil {
 			return nil, err
 		}
+		blade.BladePosition, err = i.Slot()
+		if err != nil {
+			return nil, err
+		}
+		blade.ChassisSerial, err = i.ChassisSerial()
+		if err != nil {
+			return nil, err
+		}
 		server = blade
 	} else {
 		discrete := &devices.Discrete{}
 		discrete.Vendor = i.Vendor()
 		discrete.BmcAddress = i.ip
-		discrete.BmcType = i.BmcType()
+		discrete.BmcType = i.HardwareType()
 
 		discrete.Serial, err = i.Serial()
 		if err != nil {
 			return nil, err
 		}
-		discrete.BmcVersion, err = i.BmcVersion()
+		discrete.BmcVersion, err = i.Version()
 		if err != nil {
 			return nil, err
 		}

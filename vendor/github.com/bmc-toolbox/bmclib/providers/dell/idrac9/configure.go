@@ -64,7 +64,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 		msg := "Unable to get current bios settings through redfish."
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn(msg)
@@ -79,7 +79,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 		if err != nil {
 			log.WithFields(log.Fields{
 				"IP":    i.ip,
-				"Model": i.BmcType(),
+				"Model": i.HardwareType(),
 				"step":  helper.WhosCalling(),
 				"Error": err,
 			}).Fatal("diffBiosSettings returned error.")
@@ -87,7 +87,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 
 		log.WithFields(log.Fields{
 			"IP":                            i.ip,
-			"Model":                         i.BmcType(),
+			"Model":                         i.HardwareType(),
 			"step":                          helper.WhosCalling(),
 			"Changes (Ignore empty fields)": fmt.Sprintf("%+v", toApplyBiosSettings),
 		}).Info("Bios configuration to be applied.")
@@ -100,7 +100,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 				"step":                  "applyBiosParams",
 				"resource":              "Bios",
 				"IP":                    i.ip,
-				"Model":                 i.BmcType(),
+				"Model":                 i.HardwareType(),
 				"Bios settings pending": err,
 			}).Warn("Unable to purge pending bios setting jobs.")
 		}
@@ -110,7 +110,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 			msg := "setBiosAttributes returned error."
 			log.WithFields(log.Fields{
 				"IP":    i.ip,
-				"Model": i.BmcType(),
+				"Model": i.HardwareType(),
 				"step":  helper.WhosCalling(),
 				"Error": err,
 			}).Warn(msg)
@@ -119,7 +119,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 		}).Info("Bios configuration update job queued in iDrac.")
 
@@ -127,7 +127,7 @@ func (i *IDrac9) Bios(cfg *cfgresources.Bios) (err error) {
 
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 		}).Info("Bios configuration is up to date.")
 	}
@@ -148,7 +148,7 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 		log.WithFields(log.Fields{
 			"step":  "applyUserParams",
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"Error": err,
 		}).Warn(msg)
 		return errors.New(msg)
@@ -160,7 +160,7 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 		log.WithFields(log.Fields{
 			"step":  "applyUserParams",
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"Error": err,
 		}).Warn(msg)
 		return errors.New(msg)
@@ -180,7 +180,7 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 				if err != nil {
 					log.WithFields(log.Fields{
 						"IP":    i.ip,
-						"Model": i.BmcType(),
+						"Model": i.HardwareType(),
 						"step":  helper.WhosCalling(),
 						"User":  cfgUser.Name,
 						"Error": err,
@@ -207,7 +207,7 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 			if err != nil {
 				log.WithFields(log.Fields{
 					"IP":    i.ip,
-					"Model": i.BmcType(),
+					"Model": i.HardwareType(),
 					"step":  helper.WhosCalling(),
 					"User":  cfgUser.Name,
 					"Error": err,
@@ -224,7 +224,7 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 			if err != nil {
 				log.WithFields(log.Fields{
 					"IP":         i.ip,
-					"Model":      i.BmcType(),
+					"Model":      i.HardwareType(),
 					"step":       helper.WhosCalling(),
 					"User":       cfgUser.Name,
 					"Error":      err,
@@ -237,7 +237,7 @@ func (i *IDrac9) User(cfgUsers []*cfgresources.User) (err error) {
 
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"User":  cfgUser.Name,
 		}).Debug("User parameters applied.")
 
@@ -254,7 +254,7 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 		"Port":                 "636",
 		"UserAttribute":        "uid",
 		"GroupAttribute":       "memberUid",
-		"GroupAttributeIsDN":   "Enabled",
+		"GroupAttributeIsDN":   "Disabled",
 		"CertValidationEnable": "Disabled",
 		"SearchFilter":         "objectClass=posixAccount",
 	}
@@ -263,7 +263,7 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 		msg := "Ldap resource parameter Server required but not declared."
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling,
 		}).Warn(msg)
 		return errors.New(msg)
@@ -272,7 +272,7 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 	if cfg.BaseDn == "" {
 		msg := "Ldap resource parameter BaseDn required but not declared."
 		log.WithFields(log.Fields{
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling,
 		}).Warn(msg)
 		return errors.New(msg)
@@ -316,7 +316,7 @@ func (i *IDrac9) Ldap(cfg *cfgresources.Ldap) (err error) {
 		msg := "Ldap params PUT request failed."
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn(msg)
@@ -337,7 +337,7 @@ func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 		log.WithFields(log.Fields{
 			"step":  "applyUserParams",
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"Error": err,
 		}).Warn(msg)
 		return errors.New(msg)
@@ -345,7 +345,13 @@ func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 
 	//for each configuration ldap role group
 	for _, cfgRole := range cfg {
-		roleID, role, rExists := ldapRoleGroupInIdrac(cfgRole.Group, idracLdapRoleGroups)
+
+		// the distinguished name of the group
+		// example, if the GroupBaseDn is ou=Group,dc=example,dc=com and the Group is cn=fooUsers
+		// the groupDN will be Group+GroupBaseDn = cn=fooUsers,ou=Group,dc=example,dc=com
+		var groupDN = fmt.Sprintf("%s,%s", cfgRole.Group, cfgRole.GroupBaseDn)
+
+		roleID, role, rExists := ldapRoleGroupInIdrac(groupDN, idracLdapRoleGroups)
 
 		//role to be added/updated
 		if cfgRole.Enable {
@@ -356,7 +362,7 @@ func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 				if err != nil {
 					log.WithFields(log.Fields{
 						"IP":              i.ip,
-						"Model":           i.BmcType(),
+						"Model":           i.HardwareType(),
 						"step":            helper.WhosCalling(),
 						"Ldap Role Group": cfgRole.Group,
 						"Role Group DN":   cfgRole.Role,
@@ -366,7 +372,7 @@ func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 				}
 			}
 
-			role.DN = cfgRole.Group
+			role.DN = groupDN
 
 			//set appropriate privileges
 			if cfgRole.Role == "admin" {
@@ -379,7 +385,7 @@ func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 			if err != nil {
 				log.WithFields(log.Fields{
 					"IP":              i.ip,
-					"Model":           i.BmcType(),
+					"Model":           i.HardwareType(),
 					"step":            helper.WhosCalling(),
 					"Ldap Role Group": cfgRole.Group,
 					"Role Group DN":   cfgRole.Role,
@@ -399,7 +405,7 @@ func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 			if err != nil {
 				log.WithFields(log.Fields{
 					"IP":              i.ip,
-					"Model":           i.BmcType(),
+					"Model":           i.HardwareType(),
 					"step":            helper.WhosCalling(),
 					"Ldap Role Group": cfgRole.Group,
 					"Role Group DN":   cfgRole.Role,
@@ -411,7 +417,7 @@ func (i *IDrac9) LdapGroup(cfg []*cfgresources.LdapGroup, cfgLdap *cfgresources.
 
 		log.WithFields(log.Fields{
 			"IP":              i.ip,
-			"Model":           i.BmcType(),
+			"Model":           i.HardwareType(),
 			"Step":            helper.WhosCalling(),
 			"Ldap Role Group": cfgRole.Role,
 			"Role Group DN":   cfgRole.Role,
@@ -438,7 +444,7 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 		msg := "NTP resource expects parameter: server1."
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"Step":  helper.WhosCalling(),
 		}).Warn(msg)
 		return errors.New(msg)
@@ -448,7 +454,7 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 		msg := "NTP resource expects parameter: timezone."
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"Step":  helper.WhosCalling(),
 		}).Warn(msg)
 		return errors.New(msg)
@@ -459,7 +465,7 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 		msg := "NTP resource a valid timezone parameter, for valid timezones see dell/idrac9/model.go"
 		log.WithFields(log.Fields{
 			"IP":               i.ip,
-			"Model":            i.BmcType(),
+			"Model":            i.HardwareType(),
 			"step":             helper.WhosCalling(),
 			"Unknown Timezone": cfg.Timezone,
 		}).Warn(msg)
@@ -470,7 +476,7 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"IP":       i.ip,
-			"Model":    i.BmcType(),
+			"Model":    i.HardwareType(),
 			"step":     helper.WhosCalling(),
 			"Timezone": cfg.Timezone,
 			"Error":    err,
@@ -489,7 +495,7 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn("PUT Ntp  request failed.")
@@ -498,7 +504,7 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 
 	log.WithFields(log.Fields{
 		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"Model": i.HardwareType(),
 	}).Debug("NTP servers param applied.")
 
 	return err
@@ -506,6 +512,11 @@ func (i *IDrac9) Ntp(cfg *cfgresources.Ntp) (err error) {
 
 // Syslog applies the Syslog configuration resource
 // Syslog implements the Configure interface
+//
+// As part of Syslog we enable alerts and alert filters to syslog,
+// the iDrac will not send out any messages over syslog unless this is enabled,
+// and since not all BMCs currently support configuring filtering for alerts,
+// for now the configuration for alert filters/enabling is managed through this method.
 func (i *IDrac9) Syslog(cfg *cfgresources.Syslog) (err error) {
 
 	var port int
@@ -514,7 +525,7 @@ func (i *IDrac9) Syslog(cfg *cfgresources.Syslog) (err error) {
 	if cfg.Server == "" {
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 		}).Warn("Syslog resource expects parameter: Server.")
 		return
@@ -547,17 +558,41 @@ func (i *IDrac9) Syslog(cfg *cfgresources.Syslog) (err error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn("PUT Syslog request failed.")
 		return err
 	}
 
+	// Enable alerts
+	err = i.putAlertEnable(AlertEnable{"Enabled"})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"IP":    i.ip,
+			"Model": i.HardwareType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
+		}).Warn("PUT to enable Alerts failed request failed.")
+		return err
+	}
+
+	// Configure alerts
+	err = i.putAlertConfig()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"IP":    i.ip,
+			"Model": i.HardwareType(),
+			"step":  helper.WhosCalling(),
+			"Error": err,
+		}).Warn("PUT to configure alerts failed request failed.")
+		return err
+	}
+
 	log.WithFields(log.Fields{
 		"IP":    i.ip,
-		"Model": i.BmcType(),
-	}).Debug("Syslog parameters applied.")
+		"Model": i.HardwareType(),
+	}).Debug("Syslog and alert parameters applied.")
 	return err
 }
 
@@ -614,7 +649,7 @@ func (i *IDrac9) Network(cfg *cfgresources.Network) (reset bool, err error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn("PUT IPv4 request failed.")
@@ -624,7 +659,7 @@ func (i *IDrac9) Network(cfg *cfgresources.Network) (reset bool, err error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn("PUT SerialOverLan request failed.")
@@ -634,7 +669,7 @@ func (i *IDrac9) Network(cfg *cfgresources.Network) (reset bool, err error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn("PUT SerialRedirection request failed.")
@@ -644,7 +679,7 @@ func (i *IDrac9) Network(cfg *cfgresources.Network) (reset bool, err error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"step":  helper.WhosCalling(),
 			"Error": err,
 		}).Warn("PUT IpmiOverLan request failed.")
@@ -652,7 +687,7 @@ func (i *IDrac9) Network(cfg *cfgresources.Network) (reset bool, err error) {
 
 	log.WithFields(log.Fields{
 		"IP":    i.ip,
-		"Model": i.BmcType(),
+		"Model": i.HardwareType(),
 	}).Debug("Network config parameters applied.")
 	return reset, err
 }
@@ -726,7 +761,7 @@ func (i *IDrac9) UploadHTTPSCert(cert []byte, certFileName string, key []byte, k
 	if err != nil || status != 201 {
 		log.WithFields(log.Fields{
 			"IP":       i.ip,
-			"Model":    i.BmcType(),
+			"Model":    i.HardwareType(),
 			"endpoint": endpoint,
 			"step":     helper.WhosCalling(),
 			"status":   status,
@@ -741,7 +776,7 @@ func (i *IDrac9) UploadHTTPSCert(cert []byte, certFileName string, key []byte, k
 		log.WithFields(log.Fields{
 			"step":  helper.WhosCalling(),
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"Error": err,
 		}).Warn("Unable to unmarshal cert store response payload.")
 		return false, err
@@ -752,7 +787,7 @@ func (i *IDrac9) UploadHTTPSCert(cert []byte, certFileName string, key []byte, k
 		log.WithFields(log.Fields{
 			"step":  helper.WhosCalling(),
 			"IP":    i.ip,
-			"Model": i.BmcType(),
+			"Model": i.HardwareType(),
 			"Error": err,
 		}).Warn("Unable to marshal cert store resource URI.")
 		return false, err
@@ -764,7 +799,7 @@ func (i *IDrac9) UploadHTTPSCert(cert []byte, certFileName string, key []byte, k
 	if err != nil || status != 201 {
 		log.WithFields(log.Fields{
 			"IP":       i.ip,
-			"Model":    i.BmcType(),
+			"Model":    i.HardwareType(),
 			"endpoint": endpoint,
 			"step":     helper.WhosCalling(),
 			"status":   status,

@@ -93,8 +93,8 @@ func (m *M1000e) Name() (name string, err error) {
 	return m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.ChassisStatus.CHASSISName, err
 }
 
-// BmcType returns just Model id string - m1000e
-func (m *M1000e) BmcType() (model string) {
+// HardwareType returns just Model id string - m1000e
+func (m *M1000e) HardwareType() (model string) {
 	return BMCType
 }
 
@@ -197,6 +197,16 @@ func (m *M1000e) Status() (status string, err error) {
 	if err != nil {
 		return "", err
 	}
+
+	for _, entry := range m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.ActiveAlerts.Chassis {
+		if entry.CriticalCount != 0 {
+			for _, alert := range entry.Critical {
+				status = fmt.Sprintf("%s %s", alert, status)
+			}
+			return status, err
+		}
+	}
+
 	if m.cmcJSON.Chassis.ChassisGroupMemberHealthBlob.CMCStatus.CMCActiveError == "No Errors" {
 		status = "OK"
 	} else {
@@ -205,8 +215,8 @@ func (m *M1000e) Status() (status string, err error) {
 	return status, err
 }
 
-// FwVersion returns the current firmware version of the bmc
-func (m *M1000e) FwVersion() (version string, err error) {
+// Version returns the current firmware version of the bmc
+func (m *M1000e) Version() (version string, err error) {
 	err = m.httpLogin()
 	if err != nil {
 		return version, err
@@ -466,7 +476,7 @@ func (m *M1000e) ChassisSnapshot() (chassis *devices.Chassis, err error) {
 	if err != nil {
 		return nil, err
 	}
-	chassis.FwVersion, err = m.FwVersion()
+	chassis.FwVersion, err = m.Version()
 	if err != nil {
 		return nil, err
 	}
@@ -491,6 +501,14 @@ func (m *M1000e) ChassisSnapshot() (chassis *devices.Chassis, err error) {
 		return nil, err
 	}
 	chassis.Fans, err = m.Fans()
+	if err != nil {
+		return nil, err
+	}
+	chassis.PsuRedundancyMode, err = m.PsuRedundancyMode()
+	if err != nil {
+		return nil, err
+	}
+	chassis.IsPsuRedundant, err = m.IsPsuRedundant()
 	if err != nil {
 		return nil, err
 	}

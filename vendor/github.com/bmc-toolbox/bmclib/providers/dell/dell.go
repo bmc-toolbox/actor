@@ -49,6 +49,14 @@ type ChassisGroupMemberHealthBlob struct {
 	ChassisStatus *ChassisStatus    `json:"chassis_status"`
 	CMCStatus     *CMCStatus        `json:"cmc_status"`
 	Fans          map[string]*Fan   `json:"fans_status"`
+	ActiveAlerts  struct {
+		Chassis map[string]*Alerts `json:"Chassis"`
+	} `json:"active_alerts"`
+}
+
+type Alerts struct {
+	CriticalCount int               `json:"criticalCount"`
+	Critical      map[string]string `json:"critical"`
 }
 
 // Fan contains dell fan data
@@ -344,6 +352,37 @@ type IDracPowerData struct {
 	} `json:"root"`
 }
 
+// IDrac9PowerData contains the power usage data from iDrac http://$ip/sysmgmt/2015/server/sensor/power
+type IDrac9PowerData struct {
+	Root struct {
+		Powermonitordata struct {
+			PresentReading struct {
+				Reading []struct {
+					Reading float64 `json:"reading"`
+				} `json:"reading"`
+			} `json:"presentReading"`
+		} `json:"powermonitordata"`
+	} `json:"root"`
+}
+
+type Powersupplyunit struct {
+	FwVersion        string `json:"fw_version"`
+	Health           int    `json:"health"`
+	InputWattage     int    `json:"input_wattage"`
+	LineStatus       string `json:"line_status"`
+	MaxOutputWattage string `json:"max_output_wattage"`
+	Name             string `json:"name"`
+	OutputWattage    int    `json:"output_wattage"`
+	PartNumber       string `json:"part_number"`
+	Status           int    `json:"status"`
+	Type             int    `json:"type"`
+}
+
+// IDracPowersupplyunit contains the power usage data from iDrac http://$ip/sysmgmt/2013/server/sensor/powersupplyunit
+type IDracPowersupplyunit struct {
+	Powersupplyunits map[string]*Powersupplyunit `json:"Powersupplyunit"`
+}
+
 // CMCWWN is the structure used to render the data when querying /json?method=blades-wwn-info
 type CMCWWN struct {
 	SlotMacWwn CMCSlotMacWwn `json:"slot_mac_wwn"`
@@ -418,4 +457,17 @@ type HwDetection struct {
 		SysDesc        string `json:"sysDesc"`
 		Status         string `json:"status"`
 	} `json:"aimGetProp"`
+}
+
+// SystemTopology struct contains details on the blade slot for the C6420
+type SystemTopology struct {
+	SystemServerTopology struct {
+		AisleName              string `json:"AisleName"`
+		BladeSlotNumInChassis  string `json:"BladeSlotNumInChassis"`
+		DataCenterName         string `json:"DataCenterName"`
+		RackName               string `json:"RackName"`
+		RackSlot               string `json:"RackSlot"`
+		RoomName               string `json:"RoomName"`
+		SizeOfManagedSystemInU string `json:"SizeOfManagedSystemInU"`
+	} `json:"System.ServerTopology"`
 }
