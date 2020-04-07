@@ -2,17 +2,17 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"html/template"
 
-	"github.com/GeertJohan/go.rice"
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/bmc-toolbox/actor/routes"
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/bmc-toolbox/gin-go-metrics/middleware"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
