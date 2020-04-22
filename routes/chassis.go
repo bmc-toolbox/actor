@@ -94,7 +94,7 @@ func ChassisExecuteActions(c *gin.Context) {
 	}
 	defer bmc.Close()
 
-	json := &Request{}
+	json := &request{}
 	var response []gin.H
 	if err := c.ShouldBindJSON(json); err == nil {
 		for _, action := range json.ActionSequence {
@@ -233,7 +233,7 @@ func ChassisBladeExecuteActionsByPosition(c *gin.Context) {
 	}
 	defer bmc.Close()
 
-	json := &Request{}
+	json := &request{}
 	var response []gin.H
 	if err := c.ShouldBindJSON(json); err == nil {
 		for _, action := range json.ActionSequence {
@@ -402,7 +402,7 @@ func ChassisBladeExecuteActionsBySerial(c *gin.Context) {
 		return
 	}
 
-	json := &Request{}
+	json := &request{}
 	var response []gin.H
 	if err := c.ShouldBindJSON(json); err == nil {
 		for _, action := range json.ActionSequence {
