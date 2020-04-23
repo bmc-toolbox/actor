@@ -21,13 +21,35 @@ const (
 )
 
 // Sleep transforms a sleep statement in a sleep-able time
-func Sleep(sleep string) (err error) {
-	sleep = strings.Replace(sleep, "sleep ", "", 1)
-	s, err := time.ParseDuration(sleep)
+func Sleep(action string) error {
+	duration, err := parserDuration(action)
 	if err != nil {
-		return fmt.Errorf("error sleeping: %v", err)
+		return err
 	}
-	time.Sleep(s)
+
+	time.Sleep(duration)
 
 	return err
+}
+
+// IsSleepAction checks if an action is the sleep action
+func IsSleepAction(action string) (bool, error) {
+	if strings.HasPrefix(action, "sleep") && strings.Contains(action, "sleep ") {
+		if _, err := parserDuration(action); err != nil {
+			return true, err
+		}
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func parserDuration(sleepAction string) (time.Duration, error) {
+	durationStr := strings.Replace(sleepAction, "sleep ", "", 1)
+	duration, err := time.ParseDuration(durationStr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parser duration in sleep action: %w", err)
+	}
+
+	return duration, nil
 }

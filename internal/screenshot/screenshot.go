@@ -12,9 +12,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/bmc-toolbox/bmclib/devices"
 	"github.com/spf13/viper"
 )
+
+// BmcScreenshoter represents BMC providers with the minimal set of methods
+type BmcScreenshoter interface {
+	Screenshot() ([]byte, string, error)
+	HardwareType() string
+}
 
 // Upload screenshots to a S3 bucket
 // TODO: this is a simple poc with s3, we need more love to make it better.
@@ -62,7 +67,7 @@ func upload(payload []byte, fileName string) (url string, err error) {
 	return fmt.Sprintf("%s/%s%s", viper.GetString("s3.endpoint"), *bucket, *key), err
 }
 
-func takeScreenShot(bmc devices.Bmc, host string) (payload []byte, fileName string, err error) {
+func takeScreenShot(bmc BmcScreenshoter, host string) (payload []byte, fileName string, err error) {
 	payload, extension, err := bmc.Screenshot()
 	if err != nil {
 		return payload, fileName, err
@@ -80,7 +85,7 @@ func takeScreenShot(bmc devices.Bmc, host string) (payload []byte, fileName stri
 }
 
 // S3 takes a screenshot and upload to s3
-func S3(bmc devices.Bmc, host string) (fileURL string, status bool, err error) {
+func S3(bmc BmcScreenshoter, host string) (fileURL string, status bool, err error) {
 	payload, fileName, err := takeScreenShot(bmc, host)
 	if err != nil {
 		return fileURL, status, err
@@ -95,7 +100,7 @@ func S3(bmc devices.Bmc, host string) (fileURL string, status bool, err error) {
 }
 
 // Local takes screenshot and store it locally on the server
-func Local(bmc devices.Bmc, host string) (fileURL string, status bool, err error) {
+func Local(bmc BmcScreenshoter, host string) (fileURL string, status bool, err error) {
 	payload, fileName, err := takeScreenShot(bmc, host)
 	if err != nil {
 		return fileURL, status, err
