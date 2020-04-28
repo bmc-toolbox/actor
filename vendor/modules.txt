@@ -36,11 +36,12 @@ github.com/aws/aws-sdk-go/private/protocol/restxml
 github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/service/sts
-# github.com/bmc-toolbox/bmclib v0.3.7-0.20200407084933-7a120bf33935
+# github.com/bmc-toolbox/bmclib v0.3.7
 github.com/bmc-toolbox/bmclib/cfgresources
 github.com/bmc-toolbox/bmclib/devices
 github.com/bmc-toolbox/bmclib/discover
 github.com/bmc-toolbox/bmclib/errors
+github.com/bmc-toolbox/bmclib/internal
 github.com/bmc-toolbox/bmclib/internal/helper
 github.com/bmc-toolbox/bmclib/internal/httpclient
 github.com/bmc-toolbox/bmclib/internal/ipmi

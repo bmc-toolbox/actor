@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/aws/aws-sdk-go v0.0.0-20190114232201-beaa15b1b227
-	github.com/bmc-toolbox/bmclib v0.3.7-0.20200407084933-7a120bf33935
+	github.com/bmc-toolbox/bmclib v0.3.7
 	github.com/bmc-toolbox/gin-go-metrics v0.0.1
 	github.com/gin-gonic/gin v1.3.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect

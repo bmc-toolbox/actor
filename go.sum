@@ -11,6 +11,8 @@ github.com/aws/aws-sdk-go v0.0.0-20190114232201-beaa15b1b227 h1:x/ybxnfRYxHkUb/R
 github.com/aws/aws-sdk-go v0.0.0-20190114232201-beaa15b1b227/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/bmc-toolbox/bmclib v0.3.7-0.20200407084933-7a120bf33935 h1:bQYKLlWMSENApG8RsNkCS3kDiU24oIc2KdoztkIm5zM=
 github.com/bmc-toolbox/bmclib v0.3.7-0.20200407084933-7a120bf33935/go.mod h1:92xDZFxOa+GGc8+qk1CLlVKNCYY9DExkrTDz66eb4cc=
+github.com/bmc-toolbox/bmclib v0.3.7 h1:qg9KZZanzP9QD0k16qIG+47AVHpOWpgrJcSKXrL93xg=
+github.com/bmc-toolbox/bmclib v0.3.7/go.mod h1:92xDZFxOa+GGc8+qk1CLlVKNCYY9DExkrTDz66eb4cc=
 github.com/bmc-toolbox/gin-go-metrics v0.0.1 h1:gtQ5CXe9Nz4xWgaliFF0lCPXte8hI0drpCH+5Y232pk=
 github.com/bmc-toolbox/gin-go-metrics v0.0.1/go.mod h1:JgW/TlIv2rVW1dIFBSUY61L4Fz4fbSQco8hd8BDxOtw=
 github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
