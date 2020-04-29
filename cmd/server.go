@@ -17,6 +17,8 @@ package cmd
 import (
 	"github.com/bmc-toolbox/actor/server"
 	"github.com/spf13/cobra"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // serverCmd represents the server command
@@ -24,7 +26,9 @@ var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start actor web service",
 	Run: func(cmd *cobra.Command, args []string) {
-		server.Serve()
+		if err := server.Serve(); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
