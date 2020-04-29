@@ -44,7 +44,6 @@ func Execute() {
 }
 
 func init() {
-
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)

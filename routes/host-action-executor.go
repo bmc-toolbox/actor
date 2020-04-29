@@ -250,7 +250,7 @@ func (e *hostActionExecutor) setupIpmi() error {
 		return nil
 	}
 
-	bmc, err := ipmi.New(e.username, e.password, e.host)
+	bmc, err := ipmi.New(e.host, e.username, e.password)
 	if err != nil {
 		metrics.IncrCounter([]string{"errors", "bmc", "ipmi_setup"}, 1)
 		return fmt.Errorf("failed to setup IPMI connection: %w", err)
