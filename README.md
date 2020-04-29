@@ -114,7 +114,6 @@ Power On          | `{ "action-sequence": ["poweron"]}`        |
 Power Off         | `{ "action-sequence": ["poweroff"]}`       |
 Power Cycle       | `{ "action-sequence": ["powercycle"]}`     |
 PXE Once          | `{ "action-sequence": ["pxeonce"] }`       |
-Software re-seat  | `{ "action-sequence": ["reseat"] }`        |
 Reset BMC         | `{ "action-sequence": ["powercyclebmc"] }` |
 
 API return codes.
@@ -122,7 +121,7 @@ API return codes.
 Code  | Info                            |
 :----:|:-------------------------------:|
 200   | All good!                       |
-412   | Unable to connect to BMC.       |
+400   | Request is invalid.             |
 417   | Failed to execute request.      |
 
 #### Build
