@@ -15,8 +15,14 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/bmc-toolbox/actor/server"
+	metrics "github.com/bmc-toolbox/gin-go-metrics"
+	"github.com/bmc-toolbox/gin-go-metrics/middleware"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -26,6 +32,25 @@ var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start actor web service",
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := setupMetrics(); err != nil {
+			log.Fatal(err)
+		}
+
+		config := &server.Config{
+			Address:           viper.GetString("bind_to"),
+			IsDebug:           viper.GetBool("debug"),
+			ScreenshotStorage: viper.GetString("screenshot_storage"),
+		}
+
+		middlewares := []gin.HandlerFunc{
+			middleware.NewMetrics([]string{}).HandlerFunc([]string{"http"}, []string{"/"}, true),
+		}
+
+		server, err := server.New(config, middlewares)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if err := server.Serve(); err != nil {
 			log.Fatal(err)
 		}
@@ -34,4 +59,22 @@ var serverCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serverCmd)
+}
+
+func setupMetrics() error {
+	err := metrics.Setup(
+		viper.GetString("metrics.type"),
+		viper.GetString("metrics.host"),
+		viper.GetInt("metrics.port"),
+		viper.GetString("metrics.prefix.server"),
+		time.Minute,
+	)
+	if err != nil {
+		return err
+	}
+
+	go metrics.Scheduler(time.Minute, metrics.GoRuntimeStats, []string{})
+	go metrics.Scheduler(time.Minute, metrics.MeasureRuntime, []string{"uptime"}, time.Now())
+
+	return nil
 }
