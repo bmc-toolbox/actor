@@ -5,15 +5,25 @@ import (
 	"net/http"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
+	"github.com/bmc-toolbox/actor/internal/executor"
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
+type (
+	HostAPI struct {
+		planMaker *executor.PlanMaker
+	}
+)
+
+func NewHostAPI(planMaker *executor.PlanMaker) *HostAPI {
+	return &HostAPI{planMaker: planMaker}
+}
+
 // HostPowerStatus checks the current power status of a given host
-func HostPowerStatus(c *gin.Context) {
-	logger := log.WithFields(log.Fields{"method": "HostPowerStatus"})
+func (h HostAPI) HostPowerStatus(c *gin.Context) {
+	logger := log.WithField("method", "HostPowerStatus")
 
 	host := c.Param("host")
 	if err := validateHost(host); err != nil {
@@ -22,17 +32,17 @@ func HostPowerStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, newErrorResponse(err))
 		return
 	}
-	logger = log.WithFields(log.Fields{"ip": host})
+	logger = log.WithField("ip", host)
 
-	executor := newHostActionExecutor(host, viper.GetString("bmc_user"), viper.GetString("bmc_pass"), false, logger)
-	defer executor.cleanup()
-
-	if err := executor.buildExecutionPlan([]string{actions.IsOn}); err != nil {
+	plan, err := h.planMaker.MakePlan([]string{actions.IsOn}, map[string]interface{}{"host": host})
+	if err != nil {
 		c.JSON(http.StatusBadRequest, newErrorResponse(err))
 		return
 	}
 
-	responses, err := executor.run()
+	results, err := plan.Run()
+	responses := actionResultsToResponses(results)
+
 	if len(responses) == 0 {
 		err = fmt.Errorf("actions have been executed but no response returned: %w", err)
 		logger.WithError(err).Error("error carrying out action")
@@ -49,7 +59,7 @@ func HostPowerStatus(c *gin.Context) {
 }
 
 // HostExecuteActions carries out the execution of the requested action-list for a given host
-func HostExecuteActions(c *gin.Context) {
+func (h HostAPI) HostExecuteActions(c *gin.Context) {
 	logger := log.WithFields(log.Fields{"method": "HostExecuteActions"})
 
 	host := c.Param("host")
@@ -68,37 +78,20 @@ func HostExecuteActions(c *gin.Context) {
 		return
 	}
 
-	executor := newHostActionExecutor(
-		host, viper.GetString("bmc_user"), viper.GetString("bmc_pass"), viper.GetBool("s3.enabled"), logger,
-	)
-	defer executor.cleanup()
-
-	if err := executor.buildExecutionPlan(req.ActionSequence); err != nil {
+	plan, err := h.planMaker.MakePlan(req.ActionSequence, map[string]interface{}{"host": host})
+	if err != nil {
 		c.JSON(http.StatusBadRequest, newErrorResponse(err))
 		return
 	}
 
-	response, err := executor.run()
+	results, err := plan.Run()
+	responses := actionResultsToResponses(results)
+
 	if err != nil {
-		c.JSON(http.StatusExpectationFailed, response)
+		c.JSON(http.StatusExpectationFailed, responses)
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, responses)
 	return
-}
-
-func validateHost(host string) error {
-	if host == "" {
-		return fmt.Errorf("invalid host: %s", host)
-	}
-	return nil
-}
-
-func unmarshalRequest(c *gin.Context) (*request, error) {
-	req := &request{}
-	if err := c.ShouldBindJSON(req); err != nil {
-		return nil, err
-	}
-	return req, nil
 }

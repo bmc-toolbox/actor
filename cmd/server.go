@@ -17,6 +17,9 @@ package cmd
 import (
 	"time"
 
+	"github.com/bmc-toolbox/actor/internal"
+	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/routes"
 	"github.com/bmc-toolbox/actor/server"
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/bmc-toolbox/gin-go-metrics/middleware"
@@ -46,7 +49,17 @@ var serverCmd = &cobra.Command{
 			middleware.NewMetrics([]string{}).HandlerFunc([]string{"http"}, []string{"/"}, true),
 		}
 
-		server, err := server.New(config, middlewares)
+		hostExecutorFactory := internal.NewHostExecutorFactory(
+			&internal.HostExecutorFactoryConfig{
+				IsS3:     viper.GetBool("s3.enabled"),
+				Username: viper.GetString("bmc_user"),
+				Password: viper.GetString("bmc_pass"),
+			},
+		)
+		hostPlanMaker := executor.NewPlanMaker(hostExecutorFactory)
+		hostAPI := routes.NewHostAPI(hostPlanMaker)
+
+		server, err := server.New(config, middlewares, hostAPI)
 		if err != nil {
 			log.Fatal(err)
 		}

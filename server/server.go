@@ -23,7 +23,7 @@ type (
 )
 
 // New creates a new Server
-func New(config *Config, middlewares []gin.HandlerFunc) (*Server, error) {
+func New(config *Config, middlewares []gin.HandlerFunc, hostAPI *routes.HostAPI) (*Server, error) {
 	if !config.IsDebug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -38,7 +38,7 @@ func New(config *Config, middlewares []gin.HandlerFunc) (*Server, error) {
 		return nil, fmt.Errorf("failed to set up static: %w", err)
 	}
 
-	setupRoutes(router)
+	setupRoutes(router, hostAPI)
 
 	router.Use(middlewares...)
 
@@ -78,14 +78,14 @@ func setupStatic(router *gin.Engine, screenshotStorage string) error {
 	return nil
 }
 
-func setupRoutes(router *gin.Engine) {
+func setupRoutes(router *gin.Engine, hostAPI *routes.HostAPI) {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(200, "doc.tmpl", gin.H{})
 	})
 
 	// Host level actions
-	router.GET("/host/:host", routes.HostPowerStatus)
-	router.POST("/host/:host", routes.HostExecuteActions)
+	router.GET("/host/:host", hostAPI.HostPowerStatus)
+	router.POST("/host/:host", hostAPI.HostExecuteActions)
 
 	// Chassis level actions
 	router.GET("/chassis/:host", routes.ChassisPowerStatus)
