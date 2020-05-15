@@ -2,13 +2,21 @@ package routes
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func validateHost(host string) error {
 	if host == "" {
-		return fmt.Errorf("invalid host: %s", host)
+		return fmt.Errorf("invalid host: %q", host)
+	}
+	return nil
+}
+
+func validateBladePos(pos string) error {
+	if _, err := strconv.Atoi(pos); err != nil {
+		return fmt.Errorf("invalid pos: %q: %w", pos, err)
 	}
 	return nil
 }

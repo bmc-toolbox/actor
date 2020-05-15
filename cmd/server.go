@@ -49,17 +49,27 @@ var serverCmd = &cobra.Command{
 			middleware.NewMetrics([]string{}).HandlerFunc([]string{"http"}, []string{"/"}, true),
 		}
 
+		bmcUsername := viper.GetString("bmc_user")
+		bmcPassword := viper.GetString("bmc_pass")
+
 		hostExecutorFactory := internal.NewHostExecutorFactory(
 			&internal.HostExecutorFactoryConfig{
-				IsS3:     viper.GetBool("s3.enabled"),
-				Username: viper.GetString("bmc_user"),
-				Password: viper.GetString("bmc_pass"),
+				IsS3: viper.GetBool("s3.enabled"), Username: bmcUsername, Password: bmcPassword,
 			},
 		)
-		hostPlanMaker := executor.NewPlanMaker(hostExecutorFactory)
-		hostAPI := routes.NewHostAPI(hostPlanMaker)
+		hostAPI := routes.NewHostAPI(executor.NewPlanMaker(hostExecutorFactory))
 
-		server, err := server.New(config, middlewares, hostAPI)
+		chassisExecutorFactory := internal.NewChassisExecutorFactory(
+			&internal.ChassisExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
+		)
+		chassisAPI := routes.NewChassisAPI(executor.NewPlanMaker(chassisExecutorFactory))
+
+		bladeExecutorFactory := internal.NewBladeExecutorFactory(
+			&internal.BladeExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
+		)
+		bladeAPI := routes.NewBladeAPI(executor.NewPlanMaker(bladeExecutorFactory))
+
+		server, err := server.New(config, middlewares, hostAPI, chassisAPI, bladeAPI)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -23,7 +23,13 @@ type (
 )
 
 // New creates a new Server
-func New(config *Config, middlewares []gin.HandlerFunc, hostAPI *routes.HostAPI) (*Server, error) {
+func New(
+	config *Config,
+	middlewares []gin.HandlerFunc,
+	hostAPI *routes.HostAPI,
+	chassisAPI *routes.ChassisAPI,
+	bladeAPI *routes.BladeAPI,
+) (*Server, error) {
 	if !config.IsDebug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -38,7 +44,7 @@ func New(config *Config, middlewares []gin.HandlerFunc, hostAPI *routes.HostAPI)
 		return nil, fmt.Errorf("failed to set up static: %w", err)
 	}
 
-	setupRoutes(router, hostAPI)
+	setupRoutes(router, hostAPI, chassisAPI, bladeAPI)
 
 	router.Use(middlewares...)
 
@@ -78,7 +84,12 @@ func setupStatic(router *gin.Engine, screenshotStorage string) error {
 	return nil
 }
 
-func setupRoutes(router *gin.Engine, hostAPI *routes.HostAPI) {
+func setupRoutes(
+	router *gin.Engine,
+	hostAPI *routes.HostAPI,
+	chassisAPI *routes.ChassisAPI,
+	bladeAPI *routes.BladeAPI,
+) {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(200, "doc.tmpl", gin.H{})
 	})
@@ -88,12 +99,12 @@ func setupRoutes(router *gin.Engine, hostAPI *routes.HostAPI) {
 	router.POST("/host/:host", hostAPI.HostExecuteActions)
 
 	// Chassis level actions
-	router.GET("/chassis/:host", routes.ChassisPowerStatus)
-	router.POST("/chassis/:host", routes.ChassisExecuteActions)
+	router.GET("/chassis/:host", chassisAPI.ChassisPowerStatus)
+	router.POST("/chassis/:host", chassisAPI.ChassisExecuteActions)
 
 	// Blade action on chassis level by position
-	router.GET("/chassis/:host/position/:pos", routes.ChassisBladePowerStatusByPosition)
-	router.POST("/chassis/:host/position/:pos", routes.ChassisBladeExecuteActionsByPosition)
+	router.GET("/chassis/:host/position/:pos", bladeAPI.ChassisBladePowerStatusByPosition)
+	router.POST("/chassis/:host/position/:pos", bladeAPI.ChassisBladeExecuteActionsByPosition)
 
 	// Blade action on chassis level by serial
 	router.GET("/chassis/:host/serial/:serial", routes.ChassisBladePowerStatusBySerial)
