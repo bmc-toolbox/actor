@@ -1,4 +1,4 @@
-package actions
+package internal
 
 import (
 	"testing"
@@ -109,7 +109,7 @@ func TestIsSleepAction(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsSleepAction(tt.args.action)
+			got, err := isSleepAction(tt.args.action)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IsSleepAction() error = %v, wantErr %v", err, tt.wantErr)
 				return

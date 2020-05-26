@@ -21,6 +21,13 @@ func validateBladePos(pos string) error {
 	return nil
 }
 
+func validateBladeSerial(serial string) error {
+	if serial == "" {
+		return fmt.Errorf("invalid serial: %q", serial)
+	}
+	return nil
+}
+
 func unmarshalRequest(c *gin.Context) (*request, error) {
 	req := &request{}
 	if err := c.ShouldBindJSON(req); err != nil {

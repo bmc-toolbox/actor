@@ -3,8 +3,13 @@ package executor
 import "fmt"
 
 type (
+	Action struct {
+		value    string
+		executor Executor
+	}
+
 	PlanMaker struct {
-		executorFactory ExecutorFactory
+		executorFactories []ExecutorFactory
 	}
 
 	ActionResult struct {
@@ -15,56 +20,73 @@ type (
 	}
 
 	ExecutorFactory interface {
-		New(params map[string]interface{}) (Executor, error)
+		New(map[string]interface{}) (Executor, error)
 	}
 
 	Executor interface {
-		ActionToFn(string) (ActionFn, error)
+		Validate(string) error
+		Run(string) ActionResult
 		Cleanup()
 	}
 
 	ExecutionPlan struct {
-		executor  Executor
-		actionFns []ActionFn
+		actions    []Action
+		cleanupFns []func()
 	}
 
 	ActionFn func() ActionResult
 )
 
-func NewPlanMaker(executorFactory ExecutorFactory) *PlanMaker {
-	return &PlanMaker{executorFactory: executorFactory}
+func NewPlanMaker(executorFactories ...ExecutorFactory) *PlanMaker {
+	return &PlanMaker{executorFactories: executorFactories}
 }
 
-func (e *PlanMaker) MakePlan(actions []string, params map[string]interface{}) (*ExecutionPlan, error) {
-	executor, err := e.executorFactory.New(params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make an execution plan: %w", err)
-	}
+func (e *PlanMaker) MakePlan(actionsRaw []string, params map[string]interface{}) (*ExecutionPlan, error) {
+	executors := make([]Executor, 0)
+	cleanupFns := make([]func(), 0)
 
-	plan := newExecutionPlan(executor)
-
-	for _, action := range actions {
-		fn, err := executor.ActionToFn(action)
+	for _, executorFactory := range e.executorFactories {
+		executor, err := executorFactory.New(params)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to make an execution plan: %w", err)
 		}
-		plan.actionFns = append(plan.actionFns, fn)
+		executors = append(executors, executor)
+		cleanupFns = append(cleanupFns, executor.Cleanup)
 	}
 
-	return plan, nil
+	actions := make([]Action, len(actionsRaw))
+
+	for i, action := range actionsRaw {
+		executor := e.findExecutor(action, executors)
+		if executor == nil {
+			return nil, fmt.Errorf("action %q is unknown", action)
+		}
+		actions[i] = Action{value: action, executor: executor}
+	}
+
+	return &ExecutionPlan{actions: actions, cleanupFns: cleanupFns}, nil
 }
 
-func newExecutionPlan(executor Executor) *ExecutionPlan {
-	return &ExecutionPlan{executor: executor, actionFns: make([]ActionFn, 0)}
+func (e *PlanMaker) findExecutor(action string, executors []Executor) Executor {
+	for _, executor := range executors {
+		if err := executor.Validate(action); err == nil {
+			return executor
+		}
+	}
+	return nil
 }
 
 func (p *ExecutionPlan) Run() ([]ActionResult, error) {
-	defer p.executor.Cleanup()
+	defer func() {
+		for _, cleanupFn := range p.cleanupFns {
+			cleanupFn()
+		}
+	}()
 
 	results := make([]ActionResult, 0)
 
-	for _, fn := range p.actionFns {
-		result := fn()
+	for _, action := range p.actions {
+		result := action.executor.Run(action.value)
 		results = append(results, result)
 		if result.Error != nil {
 			return results, result.Error

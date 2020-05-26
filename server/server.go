@@ -20,16 +20,17 @@ type (
 		Address           string
 		ScreenshotStorage string
 	}
+
+	APIs struct {
+		HostAPI          *routes.HostAPI
+		ChassisAPI       *routes.ChassisAPI
+		BladeByPosAPI    *routes.BladeByPosAPI
+		BladeBySerialAPI *routes.BladeBySerialAPI
+	}
 )
 
 // New creates a new Server
-func New(
-	config *Config,
-	middlewares []gin.HandlerFunc,
-	hostAPI *routes.HostAPI,
-	chassisAPI *routes.ChassisAPI,
-	bladeAPI *routes.BladeAPI,
-) (*Server, error) {
+func New(config *Config, middlewares []gin.HandlerFunc, apis *APIs) (*Server, error) {
 	if !config.IsDebug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -44,7 +45,7 @@ func New(
 		return nil, fmt.Errorf("failed to set up static: %w", err)
 	}
 
-	setupRoutes(router, hostAPI, chassisAPI, bladeAPI)
+	setupRoutes(router, apis)
 
 	router.Use(middlewares...)
 
@@ -84,29 +85,24 @@ func setupStatic(router *gin.Engine, screenshotStorage string) error {
 	return nil
 }
 
-func setupRoutes(
-	router *gin.Engine,
-	hostAPI *routes.HostAPI,
-	chassisAPI *routes.ChassisAPI,
-	bladeAPI *routes.BladeAPI,
-) {
+func setupRoutes(router *gin.Engine, apis *APIs) {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(200, "doc.tmpl", gin.H{})
 	})
 
 	// Host level actions
-	router.GET("/host/:host", hostAPI.HostPowerStatus)
-	router.POST("/host/:host", hostAPI.HostExecuteActions)
+	router.GET("/host/:host", apis.HostAPI.HostPowerStatus)
+	router.POST("/host/:host", apis.HostAPI.HostExecuteActions)
 
 	// Chassis level actions
-	router.GET("/chassis/:host", chassisAPI.ChassisPowerStatus)
-	router.POST("/chassis/:host", chassisAPI.ChassisExecuteActions)
+	router.GET("/chassis/:host", apis.ChassisAPI.ChassisPowerStatus)
+	router.POST("/chassis/:host", apis.ChassisAPI.ChassisExecuteActions)
 
 	// Blade action on chassis level by position
-	router.GET("/chassis/:host/position/:pos", bladeAPI.ChassisBladePowerStatusByPosition)
-	router.POST("/chassis/:host/position/:pos", bladeAPI.ChassisBladeExecuteActionsByPosition)
+	router.GET("/chassis/:host/position/:pos", apis.BladeByPosAPI.ChassisBladePowerStatusByPosition)
+	router.POST("/chassis/:host/position/:pos", apis.BladeByPosAPI.ChassisBladeExecuteActionsByPosition)
 
 	// Blade action on chassis level by serial
-	router.GET("/chassis/:host/serial/:serial", routes.ChassisBladePowerStatusBySerial)
-	router.POST("/chassis/:host/serial/:serial", routes.ChassisBladeExecuteActionsBySerial)
+	router.GET("/chassis/:host/serial/:serial", apis.BladeBySerialAPI.ChassisBladePowerStatusBySerial)
+	router.POST("/chassis/:host/serial/:serial", apis.BladeBySerialAPI.ChassisBladeExecuteActionsBySerial)
 }

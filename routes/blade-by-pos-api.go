@@ -11,17 +11,17 @@ import (
 )
 
 type (
-	BladeAPI struct {
+	BladeByPosAPI struct {
 		baseAPI
 	}
 )
 
-func NewBladeAPI(planMaker *executor.PlanMaker) *BladeAPI {
-	return &BladeAPI{baseAPI{planMaker: planMaker}}
+func NewBladeByPosAPI(planMaker *executor.PlanMaker) *BladeByPosAPI {
+	return &BladeByPosAPI{baseAPI{planMaker: planMaker}}
 }
 
 // ChassisBladePowerStatusByPosition checks the current power status of a blade in a given chassis
-func (ba BladeAPI) ChassisBladePowerStatusByPosition(ctx *gin.Context) {
+func (ba BladeByPosAPI) ChassisBladePowerStatusByPosition(ctx *gin.Context) {
 	logger := log.WithField("method", "ChassisBladePowerStatusByPosition")
 
 	host, bladePos, err := ba.getAndValidateParams(ctx)
@@ -38,7 +38,7 @@ func (ba BladeAPI) ChassisBladePowerStatusByPosition(ctx *gin.Context) {
 }
 
 // ChassisBladeExecuteActionsByPosition carries out the execution of the requested action-list for a blade in a given chassis
-func (ba BladeAPI) ChassisBladeExecuteActionsByPosition(ctx *gin.Context) {
+func (ba BladeByPosAPI) ChassisBladeExecuteActionsByPosition(ctx *gin.Context) {
 	logger := log.WithField("method", "ChassisBladePowerStatusByPosition")
 
 	host, bladePos, err := ba.getAndValidateParams(ctx)
@@ -54,7 +54,7 @@ func (ba BladeAPI) ChassisBladeExecuteActionsByPosition(ctx *gin.Context) {
 	ba.executeActions(ctx, map[string]interface{}{"host": host, "bladePos": bladePos}, logger)
 }
 
-func (ba BladeAPI) getAndValidateParams(ctx *gin.Context) (string, int, error) {
+func (ba BladeByPosAPI) getAndValidateParams(ctx *gin.Context) (string, int, error) {
 	host := ctx.Param("host")
 	bladePosStr := ctx.Param("pos")
 

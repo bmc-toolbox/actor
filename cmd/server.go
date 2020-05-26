@@ -35,8 +35,10 @@ var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start actor web service",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := setupMetrics(); err != nil {
-			log.Fatal(err)
+		if viper.GetBool("metrics.enabled") {
+			if err := setupMetrics(); err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		config := &server.Config{
@@ -49,12 +51,14 @@ var serverCmd = &cobra.Command{
 			middleware.NewMetrics([]string{}).HandlerFunc([]string{"http"}, []string{"/"}, true),
 		}
 
+		sleepExecutorFactory := &internal.SleepExecutorFactory{}
+
 		bmcUsername := viper.GetString("bmc_user")
 		bmcPassword := viper.GetString("bmc_pass")
 
 		hostExecutorFactory := internal.NewHostExecutorFactory(
 			&internal.HostExecutorFactoryConfig{
-				IsS3: viper.GetBool("s3.enabled"), Username: bmcUsername, Password: bmcPassword,
+				IsS3Enabled: viper.GetBool("s3.enabled"), Username: bmcUsername, Password: bmcPassword,
 			},
 		)
 		hostAPI := routes.NewHostAPI(executor.NewPlanMaker(hostExecutorFactory))
@@ -62,14 +66,28 @@ var serverCmd = &cobra.Command{
 		chassisExecutorFactory := internal.NewChassisExecutorFactory(
 			&internal.ChassisExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
 		)
-		chassisAPI := routes.NewChassisAPI(executor.NewPlanMaker(chassisExecutorFactory))
+		chassisAPI := routes.NewChassisAPI(executor.NewPlanMaker(sleepExecutorFactory, chassisExecutorFactory))
 
-		bladeExecutorFactory := internal.NewBladeExecutorFactory(
+		bladeByPosExecutorFactory := internal.NewBladeByPosExecutorFactory(
 			&internal.BladeExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
 		)
-		bladeAPI := routes.NewBladeAPI(executor.NewPlanMaker(bladeExecutorFactory))
+		bladeByPosAPI := routes.NewBladeByPosAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeByPosExecutorFactory))
 
-		server, err := server.New(config, middlewares, hostAPI, chassisAPI, bladeAPI)
+		bladeBySerialExecutorFactory := internal.NewBladeBySerialExecutorFactory(
+			&internal.BladeExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
+		)
+		bladeBySerialAPI := routes.NewBladeBySerialAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeBySerialExecutorFactory))
+
+		server, err := server.New(
+			config,
+			middlewares,
+			&server.APIs{
+				HostAPI:          hostAPI,
+				ChassisAPI:       chassisAPI,
+				BladeByPosAPI:    bladeByPosAPI,
+				BladeBySerialAPI: bladeBySerialAPI,
+			},
+		)
 		if err != nil {
 			log.Fatal(err)
 		}
