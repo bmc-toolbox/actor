@@ -45,7 +45,7 @@ func (e *ChassisExecutor) Validate(action string) error {
 }
 
 func (e *ChassisExecutor) Run(action string) actions.ActionResult {
-	return e.doBMCAction(action)
+	return e.doAction(action)
 }
 
 func (e *ChassisExecutor) matchActionToFn(action string) (func() (bool, error), error) {
@@ -61,7 +61,7 @@ func (e *ChassisExecutor) matchActionToFn(action string) (func() (bool, error), 
 	return nil, fmt.Errorf("unknown action %q", action)
 }
 
-func (e *ChassisExecutor) doBMCAction(action string) actions.ActionResult {
+func (e *ChassisExecutor) doAction(action string) actions.ActionResult {
 	fn, err := e.matchActionToFn(action)
 	if err != nil {
 		return actions.NewActionResult(action, false, "failed", err)

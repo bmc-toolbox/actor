@@ -63,7 +63,7 @@ var serverCmd = &cobra.Command{
 }
 
 func createAPIs() *server.APIs {
-	sleepExecutorFactory := &internal.SleepExecutorFactory{}
+	sleepExecutorFactory := internal.NewSleepExecutorFactory()
 
 	bmcUsername := viper.GetString("bmc_user")
 	bmcPassword := viper.GetString("bmc_pass")

@@ -33,11 +33,6 @@ func (f *BladeBySerialExecutorFactory) New(params map[string]interface{}) (actio
 	return &BladeBySerialExecutor{baseBladeExecutor: baseExecutor, bladeSerial: bladeSerial}, nil
 }
 
-func (e *BladeBySerialExecutor) Validate(action string) error {
-	_, err := e.matchActionToFn(action)
-	return err
-}
-
 func (e *BladeBySerialExecutor) Run(action string) actions.ActionResult {
 	bladePos, err := e.bmc.FindBladePosition(e.bladeSerial)
 	if err != nil {

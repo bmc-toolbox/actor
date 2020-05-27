@@ -16,6 +16,10 @@ type (
 	}
 )
 
+func NewSleepExecutorFactory() *SleepExecutorFactory {
+	return &SleepExecutorFactory{}
+}
+
 func (f *SleepExecutorFactory) New(_ map[string]interface{}) (actions.Executor, error) {
 	return &SleepExecutor{}, nil
 }

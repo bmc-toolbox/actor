@@ -8,11 +8,6 @@ import (
 )
 
 type (
-	BladeExecutorFactoryConfig struct {
-		Username string
-		Password string
-	}
-
 	baseBladeExecutor struct {
 		bmc bladeBmcProvider
 	}
