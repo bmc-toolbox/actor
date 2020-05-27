@@ -63,5 +63,4 @@ func (ba baseAPI) executeActions(ctx *gin.Context, params map[string]interface{}
 	}
 
 	ctx.JSON(http.StatusOK, responses)
-	return
 }
