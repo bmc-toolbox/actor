@@ -10,12 +10,8 @@ import (
 
 type (
 	ChassisExecutorFactory struct {
-		config *ChassisExecutorFactoryConfig
-	}
-
-	ChassisExecutorFactoryConfig struct {
-		Username string
-		Password string
+		username string
+		password string
 	}
 
 	ChassisExecutor struct {
@@ -30,8 +26,8 @@ type (
 	}
 )
 
-func NewChassisExecutorFactory(config *ChassisExecutorFactoryConfig) *ChassisExecutorFactory {
-	return &ChassisExecutorFactory{config: config}
+func NewChassisExecutorFactory(username, password string) *ChassisExecutorFactory {
+	return &ChassisExecutorFactory{username: username, password: password}
 }
 
 func (f *ChassisExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
@@ -41,7 +37,7 @@ func (f *ChassisExecutorFactory) New(params map[string]interface{}) (executor.Ex
 
 	host := fmt.Sprintf("%v", params[paramHost])
 
-	return &ChassisExecutor{bmc: providers.NewChassisBmcWrapper(f.config.Username, f.config.Password, host)}, nil
+	return &ChassisExecutor{bmc: providers.NewChassisBmcWrapper(f.username, f.password, host)}, nil
 }
 
 func (e *ChassisExecutor) Validate(action string) error {

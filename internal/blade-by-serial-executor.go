@@ -8,7 +8,8 @@ import (
 
 type (
 	BladeBySerialExecutorFactory struct {
-		config *BladeExecutorFactoryConfig
+		username string
+		password string
 	}
 
 	BladeBySerialExecutor struct {
@@ -17,8 +18,8 @@ type (
 	}
 )
 
-func NewBladeBySerialExecutorFactory(config *BladeExecutorFactoryConfig) *BladeBySerialExecutorFactory {
-	return &BladeBySerialExecutorFactory{config: config}
+func NewBladeBySerialExecutorFactory(username, password string) *BladeBySerialExecutorFactory {
+	return &BladeBySerialExecutorFactory{username: username, password: password}
 }
 
 func (f *BladeBySerialExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
@@ -26,7 +27,7 @@ func (f *BladeBySerialExecutorFactory) New(params map[string]interface{}) (execu
 		return nil, fmt.Errorf("failed to validate params: %w", err)
 	}
 
-	baseExecutor := newBaseBladeExecutor(f.config.Username, f.config.Password, fmt.Sprintf("%v", params[paramHost]))
+	baseExecutor := newBaseBladeExecutor(f.username, f.password, fmt.Sprintf("%v", params[paramHost]))
 	bladeSerial := fmt.Sprintf("%v", params[paramBladeSerial])
 
 	return &BladeBySerialExecutor{baseBladeExecutor: baseExecutor, bladeSerial: bladeSerial}, nil

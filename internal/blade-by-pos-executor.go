@@ -9,7 +9,8 @@ import (
 
 type (
 	BladeByPosExecutorFactory struct {
-		config *BladeExecutorFactoryConfig
+		username string
+		password string
 	}
 
 	BladeByPosExecutor struct {
@@ -18,8 +19,8 @@ type (
 	}
 )
 
-func NewBladeByPosExecutorFactory(config *BladeExecutorFactoryConfig) *BladeByPosExecutorFactory {
-	return &BladeByPosExecutorFactory{config: config}
+func NewBladeByPosExecutorFactory(username, password string) *BladeByPosExecutorFactory {
+	return &BladeByPosExecutorFactory{username: username, password: password}
 }
 
 func (f *BladeByPosExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
@@ -33,7 +34,7 @@ func (f *BladeByPosExecutorFactory) New(params map[string]interface{}) (executor
 		return nil, fmt.Errorf("failed to parse parameter %s from %q: %w", paramBladePosition, bladePosStr, err)
 	}
 
-	baseExecutor := newBaseBladeExecutor(f.config.Username, f.config.Password, fmt.Sprintf("%v", params[paramHost]))
+	baseExecutor := newBaseBladeExecutor(f.username, f.password, fmt.Sprintf("%v", params[paramHost]))
 
 	return &BladeByPosExecutor{baseBladeExecutor: baseExecutor, bladePos: bladePos}, nil
 }

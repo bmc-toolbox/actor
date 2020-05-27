@@ -51,43 +51,7 @@ var serverCmd = &cobra.Command{
 			middleware.NewMetrics([]string{}).HandlerFunc([]string{"http"}, []string{"/"}, true),
 		}
 
-		sleepExecutorFactory := &internal.SleepExecutorFactory{}
-
-		bmcUsername := viper.GetString("bmc_user")
-		bmcPassword := viper.GetString("bmc_pass")
-
-		hostExecutorFactory := internal.NewHostExecutorFactory(
-			&internal.HostExecutorFactoryConfig{
-				IsS3Enabled: viper.GetBool("s3.enabled"), Username: bmcUsername, Password: bmcPassword,
-			},
-		)
-		hostAPI := routes.NewHostAPI(executor.NewPlanMaker(hostExecutorFactory))
-
-		chassisExecutorFactory := internal.NewChassisExecutorFactory(
-			&internal.ChassisExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
-		)
-		chassisAPI := routes.NewChassisAPI(executor.NewPlanMaker(sleepExecutorFactory, chassisExecutorFactory))
-
-		bladeByPosExecutorFactory := internal.NewBladeByPosExecutorFactory(
-			&internal.BladeExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
-		)
-		bladeByPosAPI := routes.NewBladeByPosAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeByPosExecutorFactory))
-
-		bladeBySerialExecutorFactory := internal.NewBladeBySerialExecutorFactory(
-			&internal.BladeExecutorFactoryConfig{Username: bmcUsername, Password: bmcPassword},
-		)
-		bladeBySerialAPI := routes.NewBladeBySerialAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeBySerialExecutorFactory))
-
-		server, err := server.New(
-			config,
-			middlewares,
-			&server.APIs{
-				HostAPI:          hostAPI,
-				ChassisAPI:       chassisAPI,
-				BladeByPosAPI:    bladeByPosAPI,
-				BladeBySerialAPI: bladeBySerialAPI,
-			},
-		)
+		server, err := server.New(config, middlewares, createAPIs())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -96,6 +60,32 @@ var serverCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 	},
+}
+
+func createAPIs() *server.APIs {
+	sleepExecutorFactory := &internal.SleepExecutorFactory{}
+
+	bmcUsername := viper.GetString("bmc_user")
+	bmcPassword := viper.GetString("bmc_pass")
+
+	hostExecutorFactory := internal.NewHostExecutorFactory(bmcUsername, bmcPassword, viper.GetBool("s3.enabled"))
+	hostAPI := routes.NewHostAPI(executor.NewPlanMaker(sleepExecutorFactory, hostExecutorFactory))
+
+	chassisExecutorFactory := internal.NewChassisExecutorFactory(bmcUsername, bmcPassword)
+	chassisAPI := routes.NewChassisAPI(executor.NewPlanMaker(sleepExecutorFactory, chassisExecutorFactory))
+
+	bladeByPosExecutorFactory := internal.NewBladeByPosExecutorFactory(bmcUsername, bmcPassword)
+	bladeByPosAPI := routes.NewBladeByPosAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeByPosExecutorFactory))
+
+	bladeBySerialExecutorFactory := internal.NewBladeBySerialExecutorFactory(bmcUsername, bmcPassword)
+	bladeBySerialAPI := routes.NewBladeBySerialAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeBySerialExecutorFactory))
+
+	return &server.APIs{
+		HostAPI:          hostAPI,
+		ChassisAPI:       chassisAPI,
+		BladeByPosAPI:    bladeByPosAPI,
+		BladeBySerialAPI: bladeBySerialAPI,
+	}
 }
 
 func init() {

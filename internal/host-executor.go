@@ -11,13 +11,9 @@ import (
 
 type (
 	HostExecutorFactory struct {
-		config *HostExecutorFactoryConfig
-	}
-
-	HostExecutorFactoryConfig struct {
-		IsS3Enabled bool
-		Username    string
-		Password    string
+		isS3Enabled bool
+		username    string
+		password    string
 	}
 
 	hostExecutor struct {
@@ -43,8 +39,8 @@ type (
 	}
 )
 
-func NewHostExecutorFactory(config *HostExecutorFactoryConfig) *HostExecutorFactory {
-	return &HostExecutorFactory{config: config}
+func NewHostExecutorFactory(username, password string, isS3Enabled bool) *HostExecutorFactory {
+	return &HostExecutorFactory{username: username, password: password, isS3Enabled: isS3Enabled}
 }
 
 func (f *HostExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
@@ -55,9 +51,9 @@ func (f *HostExecutorFactory) New(params map[string]interface{}) (executor.Execu
 	host := fmt.Sprintf("%v", params[paramHost])
 
 	hostExecutor := &hostExecutor{
-		bmc:         providers.NewServerBmcWrapper(f.config.Username, f.config.Password, host),
+		bmc:         providers.NewServerBmcWrapper(f.username, f.password, host),
 		host:        host,
-		isS3Enabled: f.config.IsS3Enabled,
+		isS3Enabled: f.isS3Enabled,
 	}
 
 	return hostExecutor, nil
