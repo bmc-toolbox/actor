@@ -139,11 +139,11 @@ func (w *ServerBmcWrapper) createBmcProviderWithFallback() error {
 	// fall back to IPMI
 	var errUH *bmcerrors.ErrUnsupportedHardware
 	if errors.As(err, &errUH) || errors.Is(err, bmcerrors.ErrVendorNotSupported) {
-		ipmi_, err := w.createIpmiProvider()
-		if err != nil {
-			return err
+		ipmiProvider, ipmiErr := w.createIpmiProvider()
+		if ipmiErr != nil {
+			return ipmiErr
 		}
-		w.bmc = ipmi_
+		w.bmc = ipmiProvider
 	}
 
 	return err

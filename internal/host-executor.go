@@ -109,27 +109,35 @@ func (e *hostExecutor) doScreenshot() (string, bool, error) {
 func (e *hostExecutor) doAction(action string) actions.ActionResult {
 	serverFn, err := e.matchServerActionToFn(action)
 	if err == nil {
-		status, err := serverFn()
-		if err != nil {
-			return actions.NewActionResult(action, status, "failed", err)
-		}
-		return actions.NewActionResult(action, status, "ok", nil)
+		return e.doServerFn(action, serverFn)
 	}
 
 	screenshotFn, err := e.matchScreenshotActionToFn(action)
 	if err == nil {
-		message, status, err := screenshotFn()
-		if err != nil {
-			return actions.NewActionResult(action, status, message, err)
-		}
-		return actions.NewActionResult(action, status, message, nil)
+		return e.doScreenshotFn(action, screenshotFn)
 	}
 
 	return actions.NewActionResult(action, false, "failed", err)
 }
 
+func (e *hostExecutor) doScreenshotFn(action string, screenshotFn func() (string, bool, error)) actions.ActionResult {
+	message, status, err := screenshotFn()
+	if err != nil {
+		return actions.NewActionResult(action, status, message, err)
+	}
+	return actions.NewActionResult(action, status, message, nil)
+}
+
+func (e *hostExecutor) doServerFn(action string, serverFn func() (bool, error)) actions.ActionResult {
+	status, err := serverFn()
+	if err != nil {
+		return actions.NewActionResult(action, status, "failed", err)
+	}
+	return actions.NewActionResult(action, status, "ok", nil)
+}
+
 func (e *hostExecutor) Cleanup() {
 	if e.bmc != nil {
-		e.bmc.Close()
+		_ = e.bmc.Close()
 	}
 }
