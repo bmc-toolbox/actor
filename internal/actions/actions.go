@@ -1,15 +1,14 @@
 package actions
 
 const (
-	PowerOff      = "poweroff"
-	PowerOn       = "poweron"
-	PowerCycle    = "powercycle"
-	HardReset     = "hardreset"
-	Reseat        = "reseat"
 	IsOn          = "ison"
+	PowerOn       = "poweron"
+	PowerOff      = "poweroff"
+	PowerCycle    = "powercycle"
 	PowerCycleBmc = "powercyclebmc"
-	PxeOnce       = "pxeonce"
-	PxeOnceMBR    = "pxeoncembr"
-	PxeOnceEFI    = "pxeonceefi"
-	Screenshot    = "screenshot"
+	Reseat        = "reseat"
+
+	PxeOnce = "pxeonce"
+
+	Screenshot = "screenshot"
 )

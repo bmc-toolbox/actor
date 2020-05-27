@@ -57,7 +57,7 @@ func (e *PlanMaker) MakePlan(actionsRaw []string, params map[string]interface{})
 	actions := make([]Action, len(actionsRaw))
 
 	for i, action := range actionsRaw {
-		executor := e.findExecutor(action, executors)
+		executor := findExecutor(action, executors)
 		if executor == nil {
 			return nil, fmt.Errorf("action %q is unknown", action)
 		}
@@ -65,15 +65,6 @@ func (e *PlanMaker) MakePlan(actionsRaw []string, params map[string]interface{})
 	}
 
 	return &ExecutionPlan{actions: actions, cleanupFns: cleanupFns}, nil
-}
-
-func (e *PlanMaker) findExecutor(action string, executors []Executor) Executor {
-	for _, executor := range executors {
-		if err := executor.Validate(action); err == nil {
-			return executor
-		}
-	}
-	return nil
 }
 
 func (p *ExecutionPlan) Run() ([]ActionResult, error) {
@@ -103,4 +94,13 @@ func NewActionResult(action string, status bool, message string, err error) Acti
 		Message: message,
 		Error:   err,
 	}
+}
+
+func findExecutor(action string, executors []Executor) Executor {
+	for _, executor := range executors {
+		if err := executor.Validate(action); err == nil {
+			return executor
+		}
+	}
+	return nil
 }
