@@ -79,6 +79,5 @@ func (e *baseBladeExecutor) doAction(action string, bladePos int) actions.Action
 func (e *baseBladeExecutor) Cleanup() {
 	if e.bmc != nil {
 		e.bmc.Close()
-		e.bmc = nil
 	}
 }

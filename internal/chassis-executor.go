@@ -75,5 +75,7 @@ func (e *ChassisExecutor) doBMCAction(action string) actions.ActionResult {
 }
 
 func (e *ChassisExecutor) Cleanup() {
-	e.bmc.Close()
+	if e.bmc != nil {
+		e.bmc.Close()
+	}
 }

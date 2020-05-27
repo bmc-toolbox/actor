@@ -23,7 +23,7 @@ func (f *SleepExecutorFactory) New(_ map[string]interface{}) (actions.Executor, 
 func (e *SleepExecutor) Validate(action string) error {
 	ok, err := isSleepAction(action)
 	if !ok {
-		return fmt.Errorf("not a sleep action")
+		return fmt.Errorf("%q is not a sleep action", action)
 	}
 	return err
 }

@@ -32,7 +32,7 @@ type (
 
 		PxeOnce() (bool, error)
 
-		// TODO: it looks like the screenshot stuff shouldn't be in `hostExecutor`
+		// TODO: it looks like the screenshot's stuff shouldn't be in `hostExecutor`
 		Screenshot() ([]byte, string, error)
 		HardwareType() string
 	}
@@ -129,5 +129,7 @@ func (e *hostExecutor) doAction(action string) actions.ActionResult {
 }
 
 func (e *hostExecutor) Cleanup() {
-	e.bmc.Close()
+	if e.bmc != nil {
+		e.bmc.Close()
+	}
 }
