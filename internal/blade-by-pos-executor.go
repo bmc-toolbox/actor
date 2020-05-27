@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/internal/actions"
 )
 
 type (
@@ -23,7 +23,7 @@ func NewBladeByPosExecutorFactory(username, password string) *BladeByPosExecutor
 	return &BladeByPosExecutorFactory{username: username, password: password}
 }
 
-func (f *BladeByPosExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
+func (f *BladeByPosExecutorFactory) New(params map[string]interface{}) (actions.Executor, error) {
 	if err := validateParam(params, paramHost, paramBladePosition); err != nil {
 		return nil, fmt.Errorf("failed to validate params: %w", err)
 	}
@@ -39,6 +39,6 @@ func (f *BladeByPosExecutorFactory) New(params map[string]interface{}) (executor
 	return &BladeByPosExecutor{baseBladeExecutor: baseExecutor, bladePos: bladePos}, nil
 }
 
-func (e *BladeByPosExecutor) Run(action string) executor.ActionResult {
+func (e *BladeByPosExecutor) Run(action string) actions.ActionResult {
 	return e.doAction(action, e.bladePos)
 }

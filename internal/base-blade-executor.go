@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
-	"github.com/bmc-toolbox/actor/internal/executor"
 	"github.com/bmc-toolbox/actor/internal/providers"
 )
 
@@ -64,17 +63,17 @@ func (e *baseBladeExecutor) matchActionToFn(action string) (func(int) (bool, err
 	return nil, fmt.Errorf("unknown action %q", action)
 }
 
-func (e *baseBladeExecutor) doAction(action string, bladePos int) executor.ActionResult {
+func (e *baseBladeExecutor) doAction(action string, bladePos int) actions.ActionResult {
 	fn, err := e.matchActionToFn(action)
 	if err != nil {
-		return executor.NewActionResult(action, false, "failed", err)
+		return actions.NewActionResult(action, false, "failed", err)
 	}
 
 	status, err := fn(bladePos)
 	if err != nil {
-		return executor.NewActionResult(action, status, "failed", err)
+		return actions.NewActionResult(action, status, "failed", err)
 	}
-	return executor.NewActionResult(action, status, "ok", nil)
+	return actions.NewActionResult(action, status, "ok", nil)
 }
 
 func (e *baseBladeExecutor) Cleanup() {

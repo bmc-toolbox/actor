@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/internal/actions"
 )
 
 type (
@@ -16,7 +16,7 @@ type (
 	}
 )
 
-func (f *SleepExecutorFactory) New(_ map[string]interface{}) (executor.Executor, error) {
+func (f *SleepExecutorFactory) New(_ map[string]interface{}) (actions.Executor, error) {
 	return &SleepExecutor{}, nil
 }
 
@@ -28,15 +28,15 @@ func (e *SleepExecutor) Validate(action string) error {
 	return err
 }
 
-func (e *SleepExecutor) Run(action string) executor.ActionResult {
+func (e *SleepExecutor) Run(action string) actions.ActionResult {
 	duration, err := parserDuration(action)
 	if err != nil {
-		return executor.NewActionResult(action, false, "failed", err)
+		return actions.NewActionResult(action, false, "failed", err)
 	}
 
 	time.Sleep(duration)
 
-	return executor.NewActionResult(action, true, "ok", nil)
+	return actions.NewActionResult(action, true, "ok", nil)
 }
 
 func (e *SleepExecutor) Cleanup() {

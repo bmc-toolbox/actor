@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/internal/actions"
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -16,7 +16,7 @@ type (
 	}
 )
 
-func NewBladeByPosAPI(planMaker *executor.PlanMaker) *BladeByPosAPI {
+func NewBladeByPosAPI(planMaker *actions.PlanMaker) *BladeByPosAPI {
 	return &BladeByPosAPI{baseAPI{planMaker: planMaker}}
 }
 

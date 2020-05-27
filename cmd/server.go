@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/bmc-toolbox/actor/internal"
-	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/internal/actions"
 	"github.com/bmc-toolbox/actor/routes"
 	"github.com/bmc-toolbox/actor/server"
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
@@ -69,16 +69,16 @@ func createAPIs() *server.APIs {
 	bmcPassword := viper.GetString("bmc_pass")
 
 	hostExecutorFactory := internal.NewHostExecutorFactory(bmcUsername, bmcPassword, viper.GetBool("s3.enabled"))
-	hostAPI := routes.NewHostAPI(executor.NewPlanMaker(sleepExecutorFactory, hostExecutorFactory))
+	hostAPI := routes.NewHostAPI(actions.NewPlanMaker(sleepExecutorFactory, hostExecutorFactory))
 
 	chassisExecutorFactory := internal.NewChassisExecutorFactory(bmcUsername, bmcPassword)
-	chassisAPI := routes.NewChassisAPI(executor.NewPlanMaker(sleepExecutorFactory, chassisExecutorFactory))
+	chassisAPI := routes.NewChassisAPI(actions.NewPlanMaker(sleepExecutorFactory, chassisExecutorFactory))
 
 	bladeByPosExecutorFactory := internal.NewBladeByPosExecutorFactory(bmcUsername, bmcPassword)
-	bladeByPosAPI := routes.NewBladeByPosAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeByPosExecutorFactory))
+	bladeByPosAPI := routes.NewBladeByPosAPI(actions.NewPlanMaker(sleepExecutorFactory, bladeByPosExecutorFactory))
 
 	bladeBySerialExecutorFactory := internal.NewBladeBySerialExecutorFactory(bmcUsername, bmcPassword)
-	bladeBySerialAPI := routes.NewBladeBySerialAPI(executor.NewPlanMaker(sleepExecutorFactory, bladeBySerialExecutorFactory))
+	bladeBySerialAPI := routes.NewBladeBySerialAPI(actions.NewPlanMaker(sleepExecutorFactory, bladeBySerialExecutorFactory))
 
 	return &server.APIs{
 		HostAPI:          hostAPI,

@@ -5,14 +5,13 @@ import (
 	"net/http"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
-	"github.com/bmc-toolbox/actor/internal/executor"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
 type (
 	baseAPI struct {
-		planMaker *executor.PlanMaker
+		planMaker *actions.PlanMaker
 	}
 )
 

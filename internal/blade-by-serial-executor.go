@@ -3,7 +3,7 @@ package internal
 import (
 	"fmt"
 
-	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/internal/actions"
 )
 
 type (
@@ -22,7 +22,7 @@ func NewBladeBySerialExecutorFactory(username, password string) *BladeBySerialEx
 	return &BladeBySerialExecutorFactory{username: username, password: password}
 }
 
-func (f *BladeBySerialExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
+func (f *BladeBySerialExecutorFactory) New(params map[string]interface{}) (actions.Executor, error) {
 	if err := validateParam(params, paramHost, paramBladeSerial); err != nil {
 		return nil, fmt.Errorf("failed to validate params: %w", err)
 	}
@@ -38,10 +38,10 @@ func (e *BladeBySerialExecutor) Validate(action string) error {
 	return err
 }
 
-func (e *BladeBySerialExecutor) Run(action string) executor.ActionResult {
+func (e *BladeBySerialExecutor) Run(action string) actions.ActionResult {
 	bladePos, err := e.bmc.FindBladePosition(e.bladeSerial)
 	if err != nil {
-		return executor.NewActionResult(action, false, "failed", err)
+		return actions.NewActionResult(action, false, "failed", err)
 	}
 
 	return e.doAction(action, bladePos)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
-	"github.com/bmc-toolbox/actor/internal/executor"
 	"github.com/bmc-toolbox/actor/internal/providers"
 	"github.com/bmc-toolbox/actor/internal/screenshot"
 )
@@ -43,7 +42,7 @@ func NewHostExecutorFactory(username, password string, isS3Enabled bool) *HostEx
 	return &HostExecutorFactory{username: username, password: password, isS3Enabled: isS3Enabled}
 }
 
-func (f *HostExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
+func (f *HostExecutorFactory) New(params map[string]interface{}) (actions.Executor, error) {
 	if err := validateParam(params, paramHost); err != nil {
 		return nil, fmt.Errorf("failed to create a new executor: %w", err)
 	}
@@ -69,7 +68,7 @@ func (e *hostExecutor) Validate(action string) error {
 	return err
 }
 
-func (e *hostExecutor) Run(action string) executor.ActionResult {
+func (e *hostExecutor) Run(action string) actions.ActionResult {
 	return e.doAction(action)
 }
 
@@ -107,26 +106,26 @@ func (e *hostExecutor) doScreenshot() (string, bool, error) {
 	return screenshot.Local(e.bmc, e.host)
 }
 
-func (e *hostExecutor) doAction(action string) executor.ActionResult {
+func (e *hostExecutor) doAction(action string) actions.ActionResult {
 	serverFn, err := e.matchServerActionToFn(action)
 	if err == nil {
 		status, err := serverFn()
 		if err != nil {
-			return executor.NewActionResult(action, status, "failed", err)
+			return actions.NewActionResult(action, status, "failed", err)
 		}
-		return executor.NewActionResult(action, status, "ok", nil)
+		return actions.NewActionResult(action, status, "ok", nil)
 	}
 
 	screenshotFn, err := e.matchScreenshotActionToFn(action)
 	if err == nil {
 		message, status, err := screenshotFn()
 		if err != nil {
-			return executor.NewActionResult(action, status, message, err)
+			return actions.NewActionResult(action, status, message, err)
 		}
-		return executor.NewActionResult(action, status, message, nil)
+		return actions.NewActionResult(action, status, message, nil)
 	}
 
-	return executor.NewActionResult(action, false, "failed", err)
+	return actions.NewActionResult(action, false, "failed", err)
 }
 
 func (e *hostExecutor) Cleanup() {

@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/internal/actions"
 	metrics "github.com/bmc-toolbox/gin-go-metrics"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -15,7 +15,7 @@ type (
 	}
 )
 
-func NewBladeBySerialAPI(planMaker *executor.PlanMaker) *BladeBySerialAPI {
+func NewBladeBySerialAPI(planMaker *actions.PlanMaker) *BladeBySerialAPI {
 	return &BladeBySerialAPI{baseAPI{planMaker: planMaker}}
 }
 

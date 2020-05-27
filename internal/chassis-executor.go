@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
-	"github.com/bmc-toolbox/actor/internal/executor"
 	"github.com/bmc-toolbox/actor/internal/providers"
 )
 
@@ -30,7 +29,7 @@ func NewChassisExecutorFactory(username, password string) *ChassisExecutorFactor
 	return &ChassisExecutorFactory{username: username, password: password}
 }
 
-func (f *ChassisExecutorFactory) New(params map[string]interface{}) (executor.Executor, error) {
+func (f *ChassisExecutorFactory) New(params map[string]interface{}) (actions.Executor, error) {
 	if err := validateParam(params, paramHost); err != nil {
 		return nil, fmt.Errorf("failed to create a new executor: %w", err)
 	}
@@ -45,7 +44,7 @@ func (e *ChassisExecutor) Validate(action string) error {
 	return err
 }
 
-func (e *ChassisExecutor) Run(action string) executor.ActionResult {
+func (e *ChassisExecutor) Run(action string) actions.ActionResult {
 	return e.doBMCAction(action)
 }
 
@@ -62,17 +61,17 @@ func (e *ChassisExecutor) matchActionToFn(action string) (func() (bool, error), 
 	return nil, fmt.Errorf("unknown action %q", action)
 }
 
-func (e *ChassisExecutor) doBMCAction(action string) executor.ActionResult {
+func (e *ChassisExecutor) doBMCAction(action string) actions.ActionResult {
 	fn, err := e.matchActionToFn(action)
 	if err != nil {
-		return executor.NewActionResult(action, false, "failed", err)
+		return actions.NewActionResult(action, false, "failed", err)
 	}
 
 	status, err := fn()
 	if err != nil {
-		return executor.NewActionResult(action, status, "failed", err)
+		return actions.NewActionResult(action, status, "failed", err)
 	}
-	return executor.NewActionResult(action, status, "ok", nil)
+	return actions.NewActionResult(action, status, "ok", nil)
 }
 
 func (e *ChassisExecutor) Cleanup() {

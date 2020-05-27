@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/bmc-toolbox/actor/internal/executor"
+	"github.com/bmc-toolbox/actor/internal/actions"
 )
 
 // response represents an action response
@@ -37,7 +37,7 @@ func newErrorResponse(err error) errorResponse {
 	}
 }
 
-func actionResultsToResponses(results []executor.ActionResult) []response {
+func actionResultsToResponses(results []actions.ActionResult) []response {
 	responses := make([]response, 0)
 
 	for _, result := range results {
