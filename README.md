@@ -1,10 +1,10 @@
-### actor
+## actor
 
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/bmc-toolbox/actor)](https://goreportcard.com/report/github.com/bmc-toolbox/actor)
 
 
-##### What?
+#### What?
 Actor abstracts away various management actions to BMCs (Baseboard Management Controllers),
 and exposes them through a consistent API.
 
@@ -16,7 +16,7 @@ that are from various vendors, multiple generations, we realized the management 
 Actions like - power on/off/cycle, pxe boot are fundamental to server asset lifecycle management,
 but these are found to be unreliable, or have no return statuses, or are not exposed by each BMC in a consistent manner, nor do they behave consistently.
 
-##### How?
+#### How?
 
 Actor runs as a webservice, exposing an API, that abstracst away all
 of the differences across vendors, into a single API.
@@ -24,15 +24,15 @@ of the differences across vendors, into a single API.
 Since Actor is based on bmclib, for the list of supported vendors,
 https://github.com/bmc-toolbox/bmclib/blob/master/README.md
 
-##### How to run
+#### How to run
 
-###### Install binary
+##### Install binary
 
 ```console
 go get github.com/bmc-toolbox/actor
 ```
 
-###### Docker
+##### Docker
 
 ```console
 git clone github.com/bmc-toolbox/actor
@@ -43,7 +43,7 @@ docker-compose build actor
 docker-compose up -d server
 ```
 
-###### Build yourself
+##### Build yourself
 
 ```console
 git clone github.com/bmc-toolbox/actor
@@ -53,24 +53,44 @@ go build
 ./actor --config actor.sample.yaml server
 ```
 
-###### Sequencing actions.
+##### Check power status
 
-Multiple actions can be chained together and sequenced.
+A GET request on any endpoint. It is always a single action and returns the single response.
 
-for example `{ "action-sequence": ["sleep Xy", "powercycle"]}`
+```shell
+> curl -s localhost:8080/host/10.193.251.60 
+{"action":"ison","status":true,"message":"ok","error":""}
+```
 
+##### Sequencing actions
 
-###### Blade actions through Chassis BMC.
+Multiple actions can be chained together and sequenced. If any action fails, further actions are skipped. 
+
+```shell
+> curl -s -d '{"action-sequence": ["sleep 1s","ison"]}' localhost:8080/host/10.193.251.60 
+[{"action":"sleep 1s","status":true,"message":"ok","error":""},{"action":"ison","status":true,"message":"ok","error":""}]
+```
+
+##### API return codes and responses
+
+Code  | Info                                                          | Response
+:----:|:-------------------------------------------------------------:|:------------------------------------------------------------------------------:| 
+200   | All good!                                                     | `{"action":"sleep 1s","status":true,"message":"ok","error":""}`                |
+400   | Request is invalid, e.g. the sequence contains unknown action | `{"error":"some error"}`                                                       |
+417   | Failed to execute request.                                    | `{"action":"sleep 1s","status":false,"message":"failed","error":"some error"}` |
+
+Single-action endpoints return one response.  
+Multi-action endpoints return a list of responses but one response if the request is invalid.
+
+##### Blade actions through Chassis BMC
 
 This describes the Actor API endpoints to execute power related actions
 on the blades through the chassis.
 
-A GET on these endpoints will return the current power state of the blade.
-
 Endpoints
 
-`/chassis/:host/serial/:serial`
-`/chassis/:host/position/:position`
+`/chassis/:host/serial/:serial`  
+`/chassis/:host/position/:pos`
 
  
 Blade actions.
@@ -85,23 +105,10 @@ PXE Once          | `{ "action-sequence": ["pxeonce"] }`       |
 Software re-seat  | `{ "action-sequence": ["reseat"] }`        |
 Reset BMC         | `{ "action-sequence": ["powercyclebmc"] }` |
 
-
-API return codes.
-
-Code  | Info                            |
-:----:|:-------------------------------:|
-200   | All good!                       |
-400   | Blade isn't present in chassis. |
-412   | Unable to connect to chassis.   |
-417   | Failed to execute request.      |
-
-
-###### BMC actions
+##### BMC actions
 
 This describes the Actor API endpoints to execute power related
 actions directly on a given BMC.
-
-A GET on this endpoint returns the current power state of the server.
 
 Endpoints
 
@@ -116,28 +123,28 @@ Power Cycle       | `{ "action-sequence": ["powercycle"]}`     |
 PXE Once          | `{ "action-sequence": ["pxeonce"] }`       |
 Reset BMC         | `{ "action-sequence": ["powercyclebmc"] }` |
 
-API return codes.
+### Build
 
-Code  | Info                            |
-:----:|:-------------------------------:|
-200   | All good!                       |
-400   | Request is invalid.             |
-417   | Failed to execute request.      |
+`> go get github.com/bmc-toolbox/actor`
 
-#### Build
+#### Build with vendored modules (go 1.11)
 
-`go get github.com/bmc-toolbox/actor`
+`> GO111MODULE=on go build -mod vendor -v`
 
-##### Build with vendored modules (go 1.11)
+#### Test
 
-`GO111MODULE=on go build -mod vendor -v`
+`> GO111MODULE=on go test -mod vendor ./...`
 
-##### Notes on working with go mod
+#### Lint
+
+`> golangci-lint run ./...`
+
+#### Notes on working with go mod
 
 To pick a specific bmclib SHA.
 
-`GO111MODULE=on go get github.com/bmc-toolbox/bmclib@2d1bd1cb`
+`> GO111MODULE=on go get github.com/bmc-toolbox/bmclib@2d1bd1cb`
 
 To add/update the vendor dir.
 
-`GO111MODULE=on go mod vendor`
+`> GO111MODULE=on go mod vendor`
