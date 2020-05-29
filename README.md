@@ -123,6 +123,14 @@ Power Cycle       | `{ "action-sequence": ["powercycle"]}`     |
 PXE Once          | `{ "action-sequence": ["pxeonce"] }`       |
 Reset BMC         | `{ "action-sequence": ["powercyclebmc"] }` |
 
+`/chassis/:host`
+
+Action            |  POST payload   |
+:----------------:| :-------------: |
+Check Powered on  | `{ "action-sequence": ["ison"] }`          |
+Power On          | `{ "action-sequence": ["poweron"]}`        |
+Power Cycle       | `{ "action-sequence": ["powercycle"]}`     |
+
 ### Build
 
 `> go get github.com/bmc-toolbox/actor`
