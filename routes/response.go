@@ -1,5 +1,9 @@
 package routes
 
+import (
+	"github.com/bmc-toolbox/actor/internal/actions"
+)
+
 // response represents an action response
 type response struct {
 	Action  string `json:"action"`
@@ -31,4 +35,15 @@ func newErrorResponse(err error) errorResponse {
 	return errorResponse{
 		Error: err.Error(),
 	}
+}
+
+func actionResultsToResponses(results []actions.ActionResult) []response {
+	responses := make([]response, 0)
+
+	for _, result := range results {
+		resp := newResponse(result.Action, result.Status, result.Message, result.Error)
+		responses = append(responses, resp)
+	}
+
+	return responses
 }
