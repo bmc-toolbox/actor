@@ -22,7 +22,7 @@ func New(host string, username string, password string) (*Ipmi, error) {
 		Host:     host,
 	}
 
-	ipmitoolBin, err := ipmi.findBin("ipmitoolBin")
+	ipmitoolBin, err := ipmi.findBin("ipmitool")
 	if err != nil {
 		return nil, err
 	}
