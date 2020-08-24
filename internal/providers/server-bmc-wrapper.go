@@ -144,6 +144,7 @@ func (w *ServerBmcWrapper) createBmcProviderWithFallback() error {
 			return ipmiErr
 		}
 		w.bmc = ipmiProvider
+		return nil
 	}
 
 	return err
