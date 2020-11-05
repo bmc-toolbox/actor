@@ -1,6 +1,7 @@
 debug: true
 bmc_user: my_super_user
 bmc_pass: my_super_password
+bmc_pass_file: /my/password/file
 bind_to: 0.0.0.0:8000
 s3:
   enabled: false

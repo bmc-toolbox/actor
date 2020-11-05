@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"io/ioutil"
 	"time"
 
 	"github.com/bmc-toolbox/actor/internal"
@@ -39,6 +40,15 @@ var serverCmd = &cobra.Command{
 			if err := setupMetrics(); err != nil {
 				log.Fatal(err)
 			}
+		}
+
+		bmcPass := viper.IsSet("bmc_pass")
+		bmcPassFile := viper.IsSet("bmc_pass_file")
+		if !bmcPass && !bmcPassFile {
+			log.Fatal("One of the bmc_pass/bmc_pass_file parameters is missing in the config file")
+		}
+		if bmcPass && bmcPassFile {
+			log.Fatal("Only one of the bmc_pass/bmc_pass_file parameters is allowed in the config file")
 		}
 
 		config := &server.Config{
@@ -66,7 +76,18 @@ func createAPIs() *server.APIs {
 	sleepExecutorFactory := internal.NewSleepExecutorFactory()
 
 	bmcUsername := viper.GetString("bmc_user")
-	bmcPassword := viper.GetString("bmc_pass")
+	bmcPassword := ""
+
+	if viper.IsSet("bmc_pass") {
+		bmcPassword = viper.GetString("bmc_pass")
+	} else {
+		bmcPassFile := viper.GetString("bmc_pass_file")
+		bmcPassBytes, err := ioutil.ReadFile(bmcPassFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bmcPassword = string(bmcPassBytes)
+	}
 
 	hostExecutorFactory := internal.NewHostExecutorFactory(bmcUsername, bmcPassword, viper.GetBool("s3.enabled"))
 	hostAPI := routes.NewHostAPI(actions.NewPlanMaker(sleepExecutorFactory, hostExecutorFactory))
