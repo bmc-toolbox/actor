@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -24,7 +25,7 @@ type (
 
 	// this is abstraction over devices.Bmc and ipmi.Ipmi
 	serverBmcProvider interface {
-		Close() error
+		Close(context.Context) error
 
 		IsOn() (bool, error)
 		PowerOn() (bool, error)
@@ -120,10 +121,10 @@ func (w *ServerBmcWrapper) HardwareType() string {
 	return w.screenshoter.HardwareType()
 }
 
-func (w *ServerBmcWrapper) Close() error {
+func (w *ServerBmcWrapper) Close(context.Context) error {
 	if w.bmc != nil {
 		w.screenshoter = nil
-		return w.bmc.Close()
+		return w.bmc.Close(context.TODO())
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/bmc-toolbox/actor/internal/actions"
@@ -22,7 +23,7 @@ type (
 	}
 
 	bmcProvider interface {
-		Close() error
+		Close(context.Context) error
 
 		IsOn() (bool, error)
 		PowerOn() (bool, error)
@@ -138,6 +139,6 @@ func (e *hostExecutor) doServerFn(action string, serverFn func() (bool, error)) 
 
 func (e *hostExecutor) Cleanup() {
 	if e.bmc != nil {
-		_ = e.bmc.Close()
+		_ = e.bmc.Close(context.TODO())
 	}
 }

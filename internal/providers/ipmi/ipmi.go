@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -198,6 +199,6 @@ func (i *Ipmi) IsOn() (bool, error) {
 }
 
 // Close is a dummy connection to supply the interface
-func (i *Ipmi) Close() error {
+func (i *Ipmi) Close(context.Context) error {
 	return nil
 }
