@@ -165,7 +165,7 @@ func (w *ServerBmcWrapper) createBmcProvider() (devices.Bmc, error) {
 }
 
 func (w *ServerBmcWrapper) createIpmiProvider() (*ipmi.Ipmi, error) {
-	bmc, err := ipmi.New(w.host, w.username, w.password)
+	bmc, err := ipmi.New(w.username, w.password, w.host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup IPMI connection: %w", err)
 	}
