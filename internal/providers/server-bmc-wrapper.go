@@ -138,8 +138,7 @@ func (w *ServerBmcWrapper) createBmcProviderWithFallback() error {
 	}
 
 	// fall back to IPMI
-	var errUH *bmcerrors.ErrUnsupportedHardware
-	if errors.As(err, &errUH) || errors.Is(err, bmcerrors.ErrVendorNotSupported) {
+	if errors.Is(err, bmcerrors.ErrVendorUnknown) {
 		ipmiProvider, ipmiErr := w.createIpmiProvider()
 		if ipmiErr != nil {
 			return ipmiErr
@@ -148,20 +147,20 @@ func (w *ServerBmcWrapper) createBmcProviderWithFallback() error {
 		return nil
 	}
 
-	return err
+	return fmt.Errorf("[ServerBmcWrapper] Failed to setup BMC connection! %w", err)
 }
 
 func (w *ServerBmcWrapper) createBmcProvider() (devices.Bmc, error) {
 	conn, err := discover.ScanAndConnect(w.host, w.username, w.password)
 	if err != nil {
-		return nil, fmt.Errorf("failed to setup BMC connection: %w", err)
+		return nil, err
 	}
 
 	if bmc, ok := conn.(devices.Bmc); ok {
 		return bmc, nil
 	}
 
-	return nil, fmt.Errorf("failed to cast the BMC connection to devices.Bmc")
+	return nil, fmt.Errorf("[ServerBmcWrapper] Failed to cast the BMC connection to devices.Bmc")
 }
 
 func (w *ServerBmcWrapper) createIpmiProvider() (*ipmi.Ipmi, error) {
