@@ -74,18 +74,13 @@ func (i *Ilo) PxeOnce() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// PXE using uefi, does't work for some models
-	// directly. It only works if you pxe, powercycle and
-	// power on.
+	// PXE using UEFI, doesn't work for some models directly.
+	// It only works if you PXE and power cycle.
 	if _, err = im.PxeOnceEfi(context.Background()); err != nil {
 		return false, err
 	}
 
-	if _, err := im.PowerCycle(context.Background()); err != nil {
-		return false, err
-	}
-
-	return im.PowerOnForce(context.Background())
+	return im.PowerCycle(context.Background())
 }
 
 // IsOn tells if a machine is currently powered on
