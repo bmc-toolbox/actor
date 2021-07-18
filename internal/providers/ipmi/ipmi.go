@@ -55,7 +55,7 @@ func (i *Ipmi) run(command []string) (output string, err error) {
 	if ctx.Err() == context.DeadlineExceeded {
 		return string(out), errors.Wrap(ctx.Err(), "[run, context.DeadlineExceeded]")
 	}
-	return string(out), errors.Wrap(err, "[run] Output: " + string(out) + "|" + i.ipmitool + " " + strings.Join(ipmiArgs, " "))
+	return string(out), errors.Wrap(err, "[run] Output: "+string(out)+"|"+i.ipmitool+" "+strings.Join(ipmiArgs, " "))
 }
 
 // Reboot the machine via BMC
@@ -79,7 +79,7 @@ func (i *Ipmi) PowerCycle() (status bool, err error) {
 		return false, fmt.Errorf("[PowerCycle (%v) Error] %v: %v", command, err, output)
 	}
 
-	if strings.HasPrefix(output, "Chassis Power Control: " + reply) {
+	if strings.HasPrefix(output, "Chassis Power Control: "+reply) {
 		return true, nil
 	}
 	return false, fmt.Errorf("[PowerCycle %v (unexpected output)] %v", command, output)
@@ -206,6 +206,7 @@ func (i *Ipmi) PxeOnceEfi() (status bool, err error) {
 	}
 	return false, fmt.Errorf("[PxeOnceEfi (unexpected output)] %v", output)
 }
+
 // Boot the machine via PXE once using MBR
 func (i *Ipmi) PxeOnceMbr() (status bool, err error) {
 	output, err := i.run([]string{"chassis", "bootdev", "pxe"})
@@ -218,6 +219,7 @@ func (i *Ipmi) PxeOnceMbr() (status bool, err error) {
 	}
 	return false, fmt.Errorf("[PxeOnceMbr (unexpected output)] %v", output)
 }
+
 // The default is to PXE-boot via MBR
 func (i *Ipmi) PxeOnce() (status bool, err error) {
 	return i.PxeOnceMbr()
