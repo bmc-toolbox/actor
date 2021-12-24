@@ -200,7 +200,6 @@ func FileContainsAnyBytes(fs Fs, filename string, subslices [][]byte) (bool, err
 
 // readerContains reports whether any of the subslices is within r.
 func readerContainsAny(r io.Reader, subslices ...[]byte) bool {
-
 	if r == nil || len(subslices) == 0 {
 		return false
 	}

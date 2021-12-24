@@ -303,16 +303,19 @@ func (s *FileInfo) Name() string {
 	s.Unlock()
 	return name
 }
+
 func (s *FileInfo) Mode() os.FileMode {
 	s.Lock()
 	defer s.Unlock()
 	return s.mode
 }
+
 func (s *FileInfo) ModTime() time.Time {
 	s.Lock()
 	defer s.Unlock()
 	return s.modtime
 }
+
 func (s *FileInfo) IsDir() bool {
 	s.Lock()
 	defer s.Unlock()

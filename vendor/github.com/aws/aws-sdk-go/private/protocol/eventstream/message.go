@@ -6,13 +6,15 @@ import (
 	"hash/crc32"
 )
 
-const preludeLen = 8
-const preludeCRCLen = 4
-const msgCRCLen = 4
-const minMsgLen = preludeLen + preludeCRCLen + msgCRCLen
-const maxPayloadLen = 1024 * 1024 * 16 // 16MB
-const maxHeadersLen = 1024 * 128       // 128KB
-const maxMsgLen = minMsgLen + maxHeadersLen + maxPayloadLen
+const (
+	preludeLen    = 8
+	preludeCRCLen = 4
+	msgCRCLen     = 4
+	minMsgLen     = preludeLen + preludeCRCLen + msgCRCLen
+	maxPayloadLen = 1024 * 1024 * 16 // 16MB
+	maxHeadersLen = 1024 * 128       // 128KB
+	maxMsgLen     = minMsgLen + maxHeadersLen + maxPayloadLen
+)
 
 var crc32IEEETable = crc32.MakeTable(crc32.IEEE)
 

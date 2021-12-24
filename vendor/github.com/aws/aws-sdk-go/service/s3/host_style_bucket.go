@@ -58,9 +58,7 @@ func updateEndpointForHostStyle(r *request.Request, bucketName string) {
 	moveBucketToHost(r.HTTPRequest.URL, bucketName)
 }
 
-var (
-	accelElem = []byte("s3-accelerate.dualstack.")
-)
+var accelElem = []byte("s3-accelerate.dualstack.")
 
 func updateEndpointForAccelerate(r *request.Request, bucketName string) {
 	if !hostCompatibleBucketName(r.HTTPRequest.URL, bucketName) {
@@ -118,8 +116,10 @@ func hostCompatibleBucketName(u *url.URL, bucket string) bool {
 	return dnsCompatibleBucketName(bucket)
 }
 
-var reDomain = regexp.MustCompile(`^[a-z0-9][a-z0-9\.\-]{1,61}[a-z0-9]$`)
-var reIPAddress = regexp.MustCompile(`^(\d+\.){3}\d+$`)
+var (
+	reDomain    = regexp.MustCompile(`^[a-z0-9][a-z0-9\.\-]{1,61}[a-z0-9]$`)
+	reIPAddress = regexp.MustCompile(`^(\d+\.){3}\d+$`)
+)
 
 // dnsCompatibleBucketName returns true if the bucket name is DNS compatible.
 // Buckets created outside of the classic region MUST be DNS compatible.

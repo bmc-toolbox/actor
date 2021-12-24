@@ -26,6 +26,7 @@ func (r RequestFailure) Error() string {
 		r.StatusCode(), r.RequestID(), r.hostID)
 	return awserr.SprintError(r.Code(), r.Message(), extra, r.OrigErr())
 }
+
 func (r RequestFailure) String() string {
 	return r.Error()
 }

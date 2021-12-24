@@ -12,6 +12,7 @@ type decodedMessage struct {
 	rawMessage
 	Headers decodedHeaders `json:"headers"`
 }
+
 type jsonMessage struct {
 	Length     json.Number    `json:"total_length"`
 	HeadersLen json.Number    `json:"headers_length"`

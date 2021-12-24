@@ -9,11 +9,9 @@ import (
 )
 
 type (
-	SleepExecutorFactory struct {
-	}
+	SleepExecutorFactory struct{}
 
-	SleepExecutor struct {
-	}
+	SleepExecutor struct{}
 )
 
 func NewSleepExecutorFactory() *SleepExecutorFactory {

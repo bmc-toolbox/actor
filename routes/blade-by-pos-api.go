@@ -60,7 +60,8 @@ func (ba BladeByPosAPI) getAndValidateParams(ctx *gin.Context) (string, int, err
 
 	for _, validateFn := range []func() error{
 		func() error { return validateHost(host) },
-		func() error { return validateBladePos(bladePosStr) }} {
+		func() error { return validateBladePos(bladePosStr) },
+	} {
 		if err := validateFn(); err != nil {
 			return "", 0, err
 		}

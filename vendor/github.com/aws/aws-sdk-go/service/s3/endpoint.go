@@ -62,7 +62,7 @@ func parseOutpostAccessPointResource(a awsarn.ARN, resParts []string) (arn.Outpo
 		return arn.OutpostAccessPointARN{}, arn.InvalidARNError{ARN: a, Reason: "outpost resource-id not set"}
 	}
 
-	var outpostAccessPointARN = arn.OutpostAccessPointARN{}
+	outpostAccessPointARN := arn.OutpostAccessPointARN{}
 	switch resParts[1] {
 	case "accesspoint":
 		accessPointARN, err := arn.ParseAccessPointResource(a, resParts[2:])

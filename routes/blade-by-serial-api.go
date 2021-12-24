@@ -59,7 +59,8 @@ func (ba BladeBySerialAPI) getAndValidateParams(ctx *gin.Context) (string, strin
 
 	for _, validateFn := range []func() error{
 		func() error { return validateHost(host) },
-		func() error { return validateBladeSerial(bladeSerial) }} {
+		func() error { return validateBladeSerial(bladeSerial) },
+	} {
 		if err := validateFn(); err != nil {
 			return "", "", err
 		}

@@ -7,7 +7,6 @@ import (
 )
 
 func init() {
-
 	// define files
 	file2 := &embedded.EmbeddedFile{
 		Filename:    "doc.tmpl",
@@ -43,7 +42,6 @@ func init() {
 }
 
 func init() {
-
 	// define files
 	file4 := &embedded.EmbeddedFile{
 		Filename:    "bootstrap.min.css",

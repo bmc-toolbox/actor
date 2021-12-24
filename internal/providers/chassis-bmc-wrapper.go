@@ -22,12 +22,14 @@ func (w *ChassisBmcWrapper) IsOn() (bool, error) {
 	}
 	return w.bmc.IsOn()
 }
+
 func (w *ChassisBmcWrapper) PowerOn() (bool, error) {
 	if err := w.initBmcProvider(); err != nil {
 		return false, err
 	}
 	return w.bmc.PowerOn()
 }
+
 func (w *ChassisBmcWrapper) PowerCycle() (bool, error) {
 	if err := w.initBmcProvider(); err != nil {
 		return false, err
