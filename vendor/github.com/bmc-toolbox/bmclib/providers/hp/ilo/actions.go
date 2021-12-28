@@ -86,7 +86,7 @@ func (i *Ilo) PxeOnce() (bool, error) {
 		return false, err
 	}
 
-	return im.PowerOnForce(context.Background())
+	return im.PowerOn(context.Background())
 }
 
 // IsOn tells if a machine is currently powered on
