@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/GeertJohan/go.rice v1.0.2
 	github.com/aws/aws-sdk-go v1.37.5
-	github.com/bmc-toolbox/bmclib v0.4.14
+	github.com/bmc-toolbox/bmclib v0.4.15
 	github.com/bmc-toolbox/gin-go-metrics v0.0.2
 	github.com/daaku/go.zipexe v1.0.1 // indirect
 	github.com/gin-gonic/gin v1.7.2

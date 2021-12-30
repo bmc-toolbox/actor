@@ -6,9 +6,9 @@
 package codec
 
 import (
-	"bytes"
-	"reflect"
 	"time"
+	"reflect"
+	"bytes"
 )
 
 type stringSlice []string
