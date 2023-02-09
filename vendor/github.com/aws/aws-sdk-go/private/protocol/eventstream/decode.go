@@ -174,7 +174,6 @@ func decodeUint8(r io.Reader) (uint8, error) {
 	_, err := io.ReadFull(r, b[:])
 	return uint8(b[0]), err
 }
-
 func decodeUint16(r io.Reader) (uint16, error) {
 	var b [2]byte
 	bs := b[:]
@@ -184,7 +183,6 @@ func decodeUint16(r io.Reader) (uint16, error) {
 	}
 	return binary.BigEndian.Uint16(bs), nil
 }
-
 func decodeUint32(r io.Reader) (uint32, error) {
 	var b [4]byte
 	bs := b[:]
@@ -194,7 +192,6 @@ func decodeUint32(r io.Reader) (uint32, error) {
 	}
 	return binary.BigEndian.Uint32(bs), nil
 }
-
 func decodeUint64(r io.Reader) (uint64, error) {
 	var b [8]byte
 	bs := b[:]

@@ -57,6 +57,7 @@ func initOptions() {
 }
 
 func archInit() {
+
 	Initialized = true
 
 	maxID, _, _, _ := cpuid(0, 0)

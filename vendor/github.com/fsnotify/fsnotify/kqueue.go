@@ -73,7 +73,7 @@ func (w *Watcher) Close() error {
 	w.isClosed = true
 
 	// copy paths to remove while locked
-	pathsToRemove := make([]string, 0, len(w.watches))
+	var pathsToRemove = make([]string, 0, len(w.watches))
 	for name := range w.watches {
 		pathsToRemove = append(pathsToRemove, name)
 	}
@@ -428,6 +428,7 @@ func (w *Watcher) sendDirectoryChangeEvents(dirPath string) {
 	for _, fileInfo := range files {
 		filePath := filepath.Join(dirPath, fileInfo.Name())
 		err := w.sendFileCreatedEventIfNew(filePath, fileInfo)
+
 		if err != nil {
 			return
 		}

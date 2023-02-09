@@ -45,6 +45,7 @@ func WithRetryer(cfg *aws.Config, retryer Retryer) *aws.Config {
 	}
 	cfg.Retryer = retryer
 	return cfg
+
 }
 
 // noOpRetryer is a internal no op retryer used when a request is created

@@ -35,6 +35,7 @@ func newTokenProvider(c *EC2Metadata, duration time.Duration) *tokenProvider {
 
 // fetchTokenHandler fetches token for EC2Metadata service client by default.
 func (t *tokenProvider) fetchTokenHandler(r *request.Request) {
+
 	// short-circuits to insecure data flow if tokenProvider is disabled.
 	if v := atomic.LoadUint32(&t.disabled); v == 1 {
 		return
@@ -46,6 +47,7 @@ func (t *tokenProvider) fetchTokenHandler(r *request.Request) {
 	}
 
 	output, err := t.client.getToken(r.Context(), t.configuredTTL)
+
 	if err != nil {
 
 		// change the disabled flag on token provider to true,

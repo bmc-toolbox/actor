@@ -76,6 +76,7 @@ func (d *DefaultRetryer) setRetryerDefaults() {
 
 // RetryRules returns the delay duration before retrying this request again
 func (d DefaultRetryer) RetryRules(r *request.Request) time.Duration {
+
 	// if number of max retries is zero, no retries will be performed.
 	if d.NumMaxRetries == 0 {
 		return 0
@@ -128,6 +129,7 @@ func getJitterDelay(duration time.Duration) time.Duration {
 
 // ShouldRetry returns true if the request should be retried.
 func (d DefaultRetryer) ShouldRetry(r *request.Request) bool {
+
 	// ShouldRetry returns false if number of max retries is 0.
 	if d.NumMaxRetries == 0 {
 		return false
