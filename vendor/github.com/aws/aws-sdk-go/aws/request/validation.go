@@ -172,6 +172,7 @@ func (e *errInvalidParam) AddNestedContext(ctx string) {
 	} else {
 		e.nestedContext = fmt.Sprintf("%s.%s", ctx, e.nestedContext)
 	}
+
 }
 
 // An ErrParamRequired represents an required parameter error.

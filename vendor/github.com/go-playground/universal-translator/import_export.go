@@ -3,10 +3,10 @@ package ut
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"io"
 
 	"github.com/go-playground/locales"
 )
@@ -38,8 +38,8 @@ const (
 //
 // NOTE: this currently only works with string or int translations keys.
 func (t *UniversalTranslator) Export(format ImportExportFormat, dirname string) error {
+
 	_, err := os.Stat(dirname)
-	fmt.Println(dirname, err, os.IsNotExist(err))
 	if err != nil {
 
 		if !os.IsNotExist(err) {
@@ -67,6 +67,7 @@ func (t *UniversalTranslator) Export(format ImportExportFormat, dirname string) 
 		}
 
 		for k, pluralTrans := range locale.(*translator).cardinalTanslations {
+
 			for i, plural := range pluralTrans {
 
 				// leave enough for all plural rules
@@ -86,6 +87,7 @@ func (t *UniversalTranslator) Export(format ImportExportFormat, dirname string) 
 		}
 
 		for k, pluralTrans := range locale.(*translator).ordinalTanslations {
+
 			for i, plural := range pluralTrans {
 
 				// leave enough for all plural rules
@@ -105,6 +107,7 @@ func (t *UniversalTranslator) Export(format ImportExportFormat, dirname string) 
 		}
 
 		for k, pluralTrans := range locale.(*translator).rangeTanslations {
+
 			for i, plural := range pluralTrans {
 
 				// leave enough for all plural rules
@@ -133,7 +136,7 @@ func (t *UniversalTranslator) Export(format ImportExportFormat, dirname string) 
 			return err
 		}
 
-		err = ioutil.WriteFile(filepath.Join(dirname, fmt.Sprintf("%s%s", locale.Locale(), ext)), b, 0644)
+		err = os.WriteFile(filepath.Join(dirname, fmt.Sprintf("%s%s", locale.Locale(), ext)), b, 0644)
 		if err != nil {
 			return err
 		}
@@ -148,12 +151,14 @@ func (t *UniversalTranslator) Export(format ImportExportFormat, dirname string) 
 //
 // NOTE: this currently only works with string or int translations keys.
 func (t *UniversalTranslator) Import(format ImportExportFormat, dirnameOrFilename string) error {
+
 	fi, err := os.Stat(dirnameOrFilename)
 	if err != nil {
 		return err
 	}
 
 	processFn := func(filename string) error {
+
 		f, err := os.Open(filename)
 		if err != nil {
 			return err
@@ -169,6 +174,7 @@ func (t *UniversalTranslator) Import(format ImportExportFormat, dirnameOrFilenam
 
 	// recursively go through directory
 	walker := func(path string, info os.FileInfo, err error) error {
+
 		if info.IsDir() {
 			return nil
 		}
@@ -191,7 +197,8 @@ func (t *UniversalTranslator) Import(format ImportExportFormat, dirnameOrFilenam
 //
 // NOTE: generally used when assets have been embedded into the binary and are already in memory.
 func (t *UniversalTranslator) ImportByReader(format ImportExportFormat, reader io.Reader) error {
-	b, err := ioutil.ReadAll(reader)
+
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
@@ -246,7 +253,10 @@ func (t *UniversalTranslator) ImportByReader(format ImportExportFormat, reader i
 }
 
 func stringToPR(s string) locales.PluralRule {
+
 	switch s {
+	case "Zero":
+		return locales.PluralRuleZero
 	case "One":
 		return locales.PluralRuleOne
 	case "Two":
@@ -260,4 +270,5 @@ func stringToPR(s string) locales.PluralRule {
 	default:
 		return locales.PluralRuleUnknown
 	}
+
 }

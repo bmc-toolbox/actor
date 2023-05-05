@@ -226,6 +226,7 @@ func (u unmarshaler) unmarshalMap(value reflect.Value, data interface{}, tag ref
 }
 
 func (u unmarshaler) unmarshalScalar(value reflect.Value, data interface{}, tag reflect.StructTag) error {
+
 	switch d := data.(type) {
 	case nil:
 		return nil // nothing to do here

@@ -49,13 +49,13 @@ type Timeval struct {
 	Usec int64
 }
 
-type timeval_zos struct { // correct (with padding and all)
+type timeval_zos struct { //correct (with padding and all)
 	Sec  int64
 	_    [4]byte // pad
 	Usec int32
 }
 
-type Tms struct { // clock_t is 4-byte unsigned int in zos
+type Tms struct { //clock_t is 4-byte unsigned int in zos
 	Utime  uint32
 	Stime  uint32
 	Cutime uint32
@@ -240,7 +240,7 @@ type PollFd struct {
 	Revents int16
 }
 
-type Stat_t struct { // Linux Definition
+type Stat_t struct { //Linux Definition
 	Dev     uint64
 	Ino     uint64
 	Nlink   uint64
@@ -339,12 +339,25 @@ type Statfs_t struct {
 	Flags   uint64
 }
 
-type Dirent struct {
+type direntLE struct {
 	Reclen uint16
 	Namlen uint16
 	Ino    uint32
 	Extra  uintptr
 	Name   [256]byte
+}
+
+type Dirent struct {
+	Ino    uint64
+	Off    int64
+	Reclen uint16
+	Type   uint8
+	Name   [256]uint8
+	_      [5]byte
+}
+
+type FdSet struct {
+	Bits [64]int32
 }
 
 // This struct is packed on z/OS so it can't be used directly.
@@ -374,7 +387,7 @@ type Winsize struct {
 type W_Mnth struct {
 	Hid   [4]byte
 	Size  int32
-	Cur1  int32 // 32bit pointer
+	Cur1  int32 //32bit pointer
 	Cur2  int32 //^
 	Devno uint32
 	_     [4]byte

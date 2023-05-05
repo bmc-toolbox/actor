@@ -559,6 +559,7 @@ func (r *Request) prepareRetry() error {
 	if err := r.Error; err != nil {
 		return awserr.New(ErrCodeSerialization,
 			"failed to prepare body for retry", err)
+
 	}
 
 	// Closing response body to ensure that no response body is leaked

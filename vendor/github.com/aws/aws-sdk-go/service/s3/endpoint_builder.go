@@ -170,6 +170,7 @@ func resolveRegionalEndpoint(r *request.Request, region string, endpointsID stri
 }
 
 func updateRequestEndpoint(r *request.Request, endpoint string) (err error) {
+
 	r.HTTPRequest.URL, err = url.Parse(endpoint + r.Operation.HTTPPath)
 	if err != nil {
 		return awserr.New(request.ErrCodeSerialization,

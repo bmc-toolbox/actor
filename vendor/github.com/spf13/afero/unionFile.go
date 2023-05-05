@@ -130,7 +130,7 @@ func (f *UnionFile) Name() string {
 type DirsMerger func(lofi, bofi []os.FileInfo) ([]os.FileInfo, error)
 
 var defaultUnionMergeDirsFn = func(lofi, bofi []os.FileInfo) ([]os.FileInfo, error) {
-	files := make(map[string]os.FileInfo)
+	var files = make(map[string]os.FileInfo)
 
 	for _, fi := range lofi {
 		files[fi.Name()] = fi
@@ -151,6 +151,7 @@ var defaultUnionMergeDirsFn = func(lofi, bofi []os.FileInfo) ([]os.FileInfo, err
 	}
 
 	return rfi, nil
+
 }
 
 // Readdir will weave the two directories together and

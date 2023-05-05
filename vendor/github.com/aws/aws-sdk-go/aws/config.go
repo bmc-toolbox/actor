@@ -386,6 +386,7 @@ func (c *Config) WithS3Disable100Continue(disable bool) *Config {
 func (c *Config) WithS3UseAccelerate(enable bool) *Config {
 	c.S3UseAccelerate = &enable
 	return c
+
 }
 
 // WithS3DisableContentMD5Validation sets a config
@@ -393,6 +394,7 @@ func (c *Config) WithS3UseAccelerate(enable bool) *Config {
 func (c *Config) WithS3DisableContentMD5Validation(enable bool) *Config {
 	c.S3DisableContentMD5Validation = &enable
 	return c
+
 }
 
 // WithS3UseARNRegion sets a config S3UseARNRegion value and

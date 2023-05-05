@@ -9,8 +9,10 @@ package unix
 
 import (
 	"bytes"
+	"fmt"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"syscall"
 	"unsafe"
@@ -38,11 +40,11 @@ func copyStat(stat *Stat_t, statLE *Stat_LE_t) {
 	stat.Rdev = uint64(statLE.Rdev)
 	stat.Size = statLE.Size
 	stat.Atim.Sec = int64(statLE.Atim)
-	stat.Atim.Nsec = 0 // zos doesn't return nanoseconds
+	stat.Atim.Nsec = 0 //zos doesn't return nanoseconds
 	stat.Mtim.Sec = int64(statLE.Mtim)
-	stat.Mtim.Nsec = 0 // zos doesn't return nanoseconds
+	stat.Mtim.Nsec = 0 //zos doesn't return nanoseconds
 	stat.Ctim.Sec = int64(statLE.Ctim)
-	stat.Ctim.Nsec = 0 // zos doesn't return nanoseconds
+	stat.Ctim.Nsec = 0 //zos doesn't return nanoseconds
 	stat.Blksize = int64(statLE.Blksize)
 	stat.Blocks = statLE.Blocks
 }
@@ -55,7 +57,13 @@ func (d *Dirent) NameString() string {
 	if d == nil {
 		return ""
 	}
-	return string(d.Name[:d.Namlen])
+	s := string(d.Name[:])
+	idx := strings.IndexByte(s, 0)
+	if idx == -1 {
+		return s
+	} else {
+		return s[:idx]
+	}
 }
 
 func (sa *SockaddrInet4) sockaddr() (unsafe.Pointer, _Socklen, error) {
@@ -67,9 +75,7 @@ func (sa *SockaddrInet4) sockaddr() (unsafe.Pointer, _Socklen, error) {
 	p := (*[2]byte)(unsafe.Pointer(&sa.raw.Port))
 	p[0] = byte(sa.Port >> 8)
 	p[1] = byte(sa.Port)
-	for i := 0; i < len(sa.Addr); i++ {
-		sa.raw.Addr[i] = sa.Addr[i]
-	}
+	sa.raw.Addr = sa.Addr
 	return unsafe.Pointer(&sa.raw), _Socklen(sa.raw.Len), nil
 }
 
@@ -83,9 +89,7 @@ func (sa *SockaddrInet6) sockaddr() (unsafe.Pointer, _Socklen, error) {
 	p[0] = byte(sa.Port >> 8)
 	p[1] = byte(sa.Port)
 	sa.raw.Scope_id = sa.ZoneId
-	for i := 0; i < len(sa.Addr); i++ {
-		sa.raw.Addr[i] = sa.Addr[i]
-	}
+	sa.raw.Addr = sa.Addr
 	return unsafe.Pointer(&sa.raw), _Socklen(sa.raw.Len), nil
 }
 
@@ -144,9 +148,7 @@ func anyToSockaddr(_ int, rsa *RawSockaddrAny) (Sockaddr, error) {
 		sa := new(SockaddrInet4)
 		p := (*[2]byte)(unsafe.Pointer(&pp.Port))
 		sa.Port = int(p[0])<<8 + int(p[1])
-		for i := 0; i < len(sa.Addr); i++ {
-			sa.Addr[i] = pp.Addr[i]
-		}
+		sa.Addr = pp.Addr
 		return sa, nil
 
 	case AF_INET6:
@@ -155,9 +157,7 @@ func anyToSockaddr(_ int, rsa *RawSockaddrAny) (Sockaddr, error) {
 		p := (*[2]byte)(unsafe.Pointer(&pp.Port))
 		sa.Port = int(p[0])<<8 + int(p[1])
 		sa.ZoneId = pp.Scope_id
-		for i := 0; i < len(sa.Addr); i++ {
-			sa.Addr[i] = pp.Addr[i]
-		}
+		sa.Addr = pp.Addr
 		return sa, nil
 	}
 	return nil, EAFNOSUPPORT
@@ -222,6 +222,8 @@ func (cmsg *Cmsghdr) SetLen(length int) {
 //sys   Creat(path string, mode uint32) (fd int, err error) = SYS___CREAT_A
 //sys	Dup(oldfd int) (fd int, err error)
 //sys	Dup2(oldfd int, newfd int) (err error)
+//sys	Errno2() (er2 int) = SYS___ERRNO2
+//sys	Err2ad() (eadd *int) = SYS___ERR2AD
 //sys	Exit(code int)
 //sys	Fchdir(fd int) (err error)
 //sys	Fchmod(fd int, mode uint32) (err error)
@@ -245,10 +247,12 @@ func Fstat(fd int, stat *Stat_t) (err error) {
 //sys   Poll(fds []PollFd, timeout int) (n int, err error) = SYS_POLL
 //sys   Times(tms *Tms) (ticks uintptr, err error) = SYS_TIMES
 //sys   W_Getmntent(buff *byte, size int) (lastsys int, err error) = SYS_W_GETMNTENT
+//sys   W_Getmntent_A(buff *byte, size int) (lastsys int, err error) = SYS___W_GETMNTENT_A
 
-//sys   Mount(path string, filesystem string, fstype string, mtm uint32, parmlen int32, parm string) (err error) = SYS___MOUNT_A
-//sys   Unmount(filesystem string, mtm int) (err error) = SYS___UMOUNT_A
+//sys   mount_LE(path string, filesystem string, fstype string, mtm uint32, parmlen int32, parm string) (err error) = SYS___MOUNT_A
+//sys   unmount(filesystem string, mtm int) (err error) = SYS___UMOUNT_A
 //sys   Chroot(path string) (err error) = SYS___CHROOT_A
+//sys   Select(nmsgsfds int, r *FdSet, w *FdSet, e *FdSet, timeout *Timeval) (ret int, err error) = SYS_SELECT
 //sysnb Uname(buf *Utsname) (err error) = SYS___UNAME_A
 
 func Ptsname(fd int) (name string, err error) {
@@ -321,7 +325,7 @@ func Getpgrp() (pid int) {
 func Getrusage(who int, rusage *Rusage) (err error) {
 	var ruz rusage_zos
 	err = getrusage(who, &ruz)
-	// Only the first two fields of Rusage are set
+	//Only the first two fields of Rusage are set
 	rusage.Utime.Sec = ruz.Utime.Sec
 	rusage.Utime.Usec = int64(ruz.Utime.Usec)
 	rusage.Stime.Sec = ruz.Stime.Sec
@@ -571,7 +575,7 @@ func setTimespec(sec, nsec int64) Timespec {
 	return Timespec{Sec: sec, Nsec: nsec}
 }
 
-func setTimeval(sec, usec int64) Timeval { // fix
+func setTimeval(sec, usec int64) Timeval { //fix
 	return Timeval{Sec: sec, Usec: usec}
 }
 
@@ -583,8 +587,10 @@ func Pipe(p []int) (err error) {
 	}
 	var pp [2]_C_int
 	err = pipe(&pp)
-	p[0] = int(pp[0])
-	p[1] = int(pp[1])
+	if err == nil {
+		p[0] = int(pp[0])
+		p[1] = int(pp[1])
+	}
 	return
 }
 
@@ -1219,7 +1225,7 @@ func Readdir(dir uintptr) (*Dirent, error) {
 	// Therefore to avoid false positives we clear errno before calling it.
 
 	// TODO(neeilan): Commented this out to get sys/unix compiling on z/OS. Uncomment and fix. Error: "undefined: clearsyscall"
-	// clearsyscall.Errno() // TODO(mundaym): check pre-emption rules.
+	//clearsyscall.Errno() // TODO(mundaym): check pre-emption rules.
 
 	e, _, _ := syscall_syscall(SYS___READDIR_R_A, dir, uintptr(unsafe.Pointer(&ent)), uintptr(unsafe.Pointer(&res)))
 	var err error
@@ -1230,6 +1236,14 @@ func Readdir(dir uintptr) (*Dirent, error) {
 		return nil, err
 	}
 	return &ent, err
+}
+
+func readdir_r(dirp uintptr, entry *direntLE, result **direntLE) (err error) {
+	r0, _, e1 := syscall_syscall(SYS___READDIR_R_A, dirp, uintptr(unsafe.Pointer(entry)), uintptr(unsafe.Pointer(result)))
+	if int64(r0) == -1 {
+		err = errnoErr(Errno(e1))
+	}
+	return
 }
 
 func Closedir(dir uintptr) error {
@@ -1276,6 +1290,7 @@ func FcntlFlock(fd uintptr, cmd int, lk *Flock_t) error {
 }
 
 func Flock(fd int, how int) error {
+
 	var flock_type int16
 	var fcntl_cmd int
 
@@ -1348,7 +1363,8 @@ func Munlockall() (err error) {
 }
 
 func ClockGettime(clockid int32, ts *Timespec) error {
-	var ticks_per_sec uint32 = 100 // TODO(kenan): value is currently hardcoded; need sysconf() call otherwise
+
+	var ticks_per_sec uint32 = 100 //TODO(kenan): value is currently hardcoded; need sysconf() call otherwise
 	var nsec_per_sec int64 = 1000000000
 
 	if ts == nil {
@@ -1481,7 +1497,7 @@ func (m *mmapper) Mmap(fd int, offset int64, length int, prot int, flags int) (d
 	}
 
 	// Slice memory layout
-	sl := struct {
+	var sl = struct {
 		addr uintptr
 		len  int
 		cap  int
@@ -1693,7 +1709,7 @@ func SetsockoptByte(fd, level, opt int, value byte) (err error) {
 }
 
 func SetsockoptInt(fd, level, opt int, value int) (err error) {
-	n := int32(value)
+	var n = int32(value)
 	return setsockopt(fd, level, opt, unsafe.Pointer(&n), 4)
 }
 
@@ -1776,4 +1792,203 @@ func SetNonblock(fd int, nonblocking bool) (err error) {
 // process (["USER=go", "PWD=/tmp"]).
 func Exec(argv0 string, argv []string, envv []string) error {
 	return syscall.Exec(argv0, argv, envv)
+}
+
+func Mount(source string, target string, fstype string, flags uintptr, data string) (err error) {
+	if needspace := 8 - len(fstype); needspace <= 0 {
+		fstype = fstype[:8]
+	} else {
+		fstype += "        "[:needspace]
+	}
+	return mount_LE(target, source, fstype, uint32(flags), int32(len(data)), data)
+}
+
+func Unmount(name string, mtm int) (err error) {
+	// mountpoint is always a full path and starts with a '/'
+	// check if input string is not a mountpoint but a filesystem name
+	if name[0] != '/' {
+		return unmount(name, mtm)
+	}
+	// treat name as mountpoint
+	b2s := func(arr []byte) string {
+		nulli := bytes.IndexByte(arr, 0)
+		if nulli == -1 {
+			return string(arr)
+		} else {
+			return string(arr[:nulli])
+		}
+	}
+	var buffer struct {
+		header W_Mnth
+		fsinfo [64]W_Mntent
+	}
+	fsCount, err := W_Getmntent_A((*byte)(unsafe.Pointer(&buffer)), int(unsafe.Sizeof(buffer)))
+	if err != nil {
+		return err
+	}
+	if fsCount == 0 {
+		return EINVAL
+	}
+	for i := 0; i < fsCount; i++ {
+		if b2s(buffer.fsinfo[i].Mountpoint[:]) == name {
+			err = unmount(b2s(buffer.fsinfo[i].Fsname[:]), mtm)
+			break
+		}
+	}
+	return err
+}
+
+func fdToPath(dirfd int) (path string, err error) {
+	var buffer [1024]byte
+	// w_ctrl()
+	ret := runtime.CallLeFuncByPtr(runtime.XplinkLibvec+SYS_W_IOCTL<<4,
+		[]uintptr{uintptr(dirfd), 17, 1024, uintptr(unsafe.Pointer(&buffer[0]))})
+	if ret == 0 {
+		zb := bytes.IndexByte(buffer[:], 0)
+		if zb == -1 {
+			zb = len(buffer)
+		}
+		// __e2a_l()
+		runtime.CallLeFuncByPtr(runtime.XplinkLibvec+SYS___E2A_L<<4,
+			[]uintptr{uintptr(unsafe.Pointer(&buffer[0])), uintptr(zb)})
+		return string(buffer[:zb]), nil
+	}
+	// __errno()
+	errno := int(*(*int32)(unsafe.Pointer(runtime.CallLeFuncByPtr(runtime.XplinkLibvec+SYS___ERRNO<<4,
+		[]uintptr{}))))
+	// __errno2()
+	errno2 := int(runtime.CallLeFuncByPtr(runtime.XplinkLibvec+SYS___ERRNO2<<4,
+		[]uintptr{}))
+	// strerror_r()
+	ret = runtime.CallLeFuncByPtr(runtime.XplinkLibvec+SYS_STRERROR_R<<4,
+		[]uintptr{uintptr(errno), uintptr(unsafe.Pointer(&buffer[0])), 1024})
+	if ret == 0 {
+		zb := bytes.IndexByte(buffer[:], 0)
+		if zb == -1 {
+			zb = len(buffer)
+		}
+		return "", fmt.Errorf("%s (errno2=0x%x)", buffer[:zb], errno2)
+	} else {
+		return "", fmt.Errorf("fdToPath errno %d (errno2=0x%x)", errno, errno2)
+	}
+}
+
+func direntLeToDirentUnix(dirent *direntLE, dir uintptr, path string) (Dirent, error) {
+	var d Dirent
+
+	d.Ino = uint64(dirent.Ino)
+	offset, err := Telldir(dir)
+	if err != nil {
+		return d, err
+	}
+
+	d.Off = int64(offset)
+	s := string(bytes.Split(dirent.Name[:], []byte{0})[0])
+	copy(d.Name[:], s)
+
+	d.Reclen = uint16(24 + len(d.NameString()))
+	var st Stat_t
+	path = path + "/" + s
+	err = Lstat(path, &st)
+	if err != nil {
+		return d, err
+	}
+
+	d.Type = uint8(st.Mode >> 24)
+	return d, err
+}
+
+func Getdirentries(fd int, buf []byte, basep *uintptr) (n int, err error) {
+	// Simulation of Getdirentries port from the Darwin implementation.
+	// COMMENTS FROM DARWIN:
+	// It's not the full required semantics, but should handle the case
+	// of calling Getdirentries or ReadDirent repeatedly.
+	// It won't handle assigning the results of lseek to *basep, or handle
+	// the directory being edited underfoot.
+
+	skip, err := Seek(fd, 0, 1 /* SEEK_CUR */)
+	if err != nil {
+		return 0, err
+	}
+
+	// Get path from fd to avoid unavailable call (fdopendir)
+	path, err := fdToPath(fd)
+	if err != nil {
+		return 0, err
+	}
+	d, err := Opendir(path)
+	if err != nil {
+		return 0, err
+	}
+	defer Closedir(d)
+
+	var cnt int64
+	for {
+		var entryLE direntLE
+		var entrypLE *direntLE
+		e := readdir_r(d, &entryLE, &entrypLE)
+		if e != nil {
+			return n, e
+		}
+		if entrypLE == nil {
+			break
+		}
+		if skip > 0 {
+			skip--
+			cnt++
+			continue
+		}
+
+		// Dirent on zos has a different structure
+		entry, e := direntLeToDirentUnix(&entryLE, d, path)
+		if e != nil {
+			return n, e
+		}
+
+		reclen := int(entry.Reclen)
+		if reclen > len(buf) {
+			// Not enough room. Return for now.
+			// The counter will let us know where we should start up again.
+			// Note: this strategy for suspending in the middle and
+			// restarting is O(n^2) in the length of the directory. Oh well.
+			break
+		}
+
+		// Copy entry into return buffer.
+		s := unsafe.Slice((*byte)(unsafe.Pointer(&entry)), reclen)
+		copy(buf, s)
+
+		buf = buf[reclen:]
+		n += reclen
+		cnt++
+	}
+	// Set the seek offset of the input fd to record
+	// how many files we've already returned.
+	_, err = Seek(fd, cnt, 0 /* SEEK_SET */)
+	if err != nil {
+		return n, err
+	}
+
+	return n, nil
+}
+
+func ReadDirent(fd int, buf []byte) (n int, err error) {
+	var base = (*uintptr)(unsafe.Pointer(new(uint64)))
+	return Getdirentries(fd, buf, base)
+}
+
+func direntIno(buf []byte) (uint64, bool) {
+	return readInt(buf, unsafe.Offsetof(Dirent{}.Ino), unsafe.Sizeof(Dirent{}.Ino))
+}
+
+func direntReclen(buf []byte) (uint64, bool) {
+	return readInt(buf, unsafe.Offsetof(Dirent{}.Reclen), unsafe.Sizeof(Dirent{}.Reclen))
+}
+
+func direntNamlen(buf []byte) (uint64, bool) {
+	reclen, ok := direntReclen(buf)
+	if !ok {
+		return 0, false
+	}
+	return reclen - uint64(unsafe.Offsetof(Dirent{}.Name)), true
 }

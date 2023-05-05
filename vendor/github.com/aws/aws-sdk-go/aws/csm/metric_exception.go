@@ -13,7 +13,6 @@ type requestException struct {
 func (e requestException) Exception() string {
 	return e.exception
 }
-
 func (e requestException) Message() string {
 	return e.message
 }

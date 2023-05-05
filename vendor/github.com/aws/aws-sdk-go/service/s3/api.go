@@ -10382,6 +10382,7 @@ func (es *SelectObjectContentEventStream) runOnStreamPartClose(r *request.Reques
 		return
 	}
 	go es.waitStreamPartClose()
+
 }
 
 func (es *SelectObjectContentEventStream) waitStreamPartClose() {
@@ -32943,7 +32944,6 @@ func (s *SelectObjectContentOutput) SetEventStream(v *SelectObjectContentEventSt
 	s.EventStream = v
 	return s
 }
-
 func (s *SelectObjectContentOutput) GetEventStream() *SelectObjectContentEventStream {
 	return s.EventStream
 }

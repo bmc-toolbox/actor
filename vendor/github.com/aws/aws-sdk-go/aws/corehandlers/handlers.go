@@ -216,8 +216,7 @@ var AfterRetryHandler = request.NamedHandler{
 			r.RetryCount++
 			r.Error = nil
 		}
-	},
-}
+	}}
 
 // ValidateEndpointHandler is a request handler to validate a request had the
 // appropriate Region and Endpoint set. Will set r.Error if the endpoint or
