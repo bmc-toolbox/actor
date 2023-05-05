@@ -9,8 +9,10 @@ const (
 	pausedEnum
 )
 
-// MetricsChannelSize of metrics to hold in the channel
-var MetricsChannelSize = 100
+var (
+	// MetricsChannelSize of metrics to hold in the channel
+	MetricsChannelSize = 100
+)
 
 type metricChan struct {
 	ch     chan metric

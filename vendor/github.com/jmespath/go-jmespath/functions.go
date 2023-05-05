@@ -50,11 +50,9 @@ type byExprString struct {
 func (a *byExprString) Len() int {
 	return len(a.items)
 }
-
 func (a *byExprString) Swap(i, j int) {
 	a.items[i], a.items[j] = a.items[j], a.items[i]
 }
-
 func (a *byExprString) Less(i, j int) bool {
 	first, err := a.intr.Execute(a.node, a.items[i])
 	if err != nil {
@@ -91,11 +89,9 @@ type byExprFloat struct {
 func (a *byExprFloat) Len() int {
 	return len(a.items)
 }
-
 func (a *byExprFloat) Swap(i, j int) {
 	a.items[i], a.items[j] = a.items[j], a.items[i]
 }
-
 func (a *byExprFloat) Less(i, j int) bool {
 	first, err := a.intr.Execute(a.node, a.items[i])
 	if err != nil {
@@ -440,12 +436,10 @@ func jpfAvg(arguments []interface{}) (interface{}, error) {
 	}
 	return numerator / length, nil
 }
-
 func jpfCeil(arguments []interface{}) (interface{}, error) {
 	val := arguments[0].(float64)
 	return math.Ceil(val), nil
 }
-
 func jpfContains(arguments []interface{}) (interface{}, error) {
 	search := arguments[0]
 	el := arguments[1]
@@ -464,18 +458,15 @@ func jpfContains(arguments []interface{}) (interface{}, error) {
 	}
 	return false, nil
 }
-
 func jpfEndsWith(arguments []interface{}) (interface{}, error) {
 	search := arguments[0].(string)
 	suffix := arguments[1].(string)
 	return strings.HasSuffix(search, suffix), nil
 }
-
 func jpfFloor(arguments []interface{}) (interface{}, error) {
 	val := arguments[0].(float64)
 	return math.Floor(val), nil
 }
-
 func jpfMap(arguments []interface{}) (interface{}, error) {
 	intr := arguments[0].(*treeInterpreter)
 	exp := arguments[1].(expRef)
@@ -491,7 +482,6 @@ func jpfMap(arguments []interface{}) (interface{}, error) {
 	}
 	return mapped, nil
 }
-
 func jpfMax(arguments []interface{}) (interface{}, error) {
 	if items, ok := toArrayNum(arguments[0]); ok {
 		if len(items) == 0 {
@@ -524,7 +514,6 @@ func jpfMax(arguments []interface{}) (interface{}, error) {
 	}
 	return best, nil
 }
-
 func jpfMerge(arguments []interface{}) (interface{}, error) {
 	final := make(map[string]interface{})
 	for _, m := range arguments {
@@ -535,7 +524,6 @@ func jpfMerge(arguments []interface{}) (interface{}, error) {
 	}
 	return final, nil
 }
-
 func jpfMaxBy(arguments []interface{}) (interface{}, error) {
 	intr := arguments[0].(*treeInterpreter)
 	arr := arguments[1].([]interface{})
@@ -591,7 +579,6 @@ func jpfMaxBy(arguments []interface{}) (interface{}, error) {
 		return nil, errors.New("invalid type, must be number of string")
 	}
 }
-
 func jpfSum(arguments []interface{}) (interface{}, error) {
 	items, _ := toArrayNum(arguments[0])
 	sum := 0.0
@@ -687,7 +674,6 @@ func jpfMinBy(arguments []interface{}) (interface{}, error) {
 		return nil, errors.New("invalid type, must be number of string")
 	}
 }
-
 func jpfType(arguments []interface{}) (interface{}, error) {
 	arg := arguments[0]
 	if _, ok := arg.(float64); ok {
@@ -710,7 +696,6 @@ func jpfType(arguments []interface{}) (interface{}, error) {
 	}
 	return nil, errors.New("unknown type")
 }
-
 func jpfKeys(arguments []interface{}) (interface{}, error) {
 	arg := arguments[0].(map[string]interface{})
 	collected := make([]interface{}, 0, len(arg))
@@ -719,7 +704,6 @@ func jpfKeys(arguments []interface{}) (interface{}, error) {
 	}
 	return collected, nil
 }
-
 func jpfValues(arguments []interface{}) (interface{}, error) {
 	arg := arguments[0].(map[string]interface{})
 	collected := make([]interface{}, 0, len(arg))
@@ -728,7 +712,6 @@ func jpfValues(arguments []interface{}) (interface{}, error) {
 	}
 	return collected, nil
 }
-
 func jpfSort(arguments []interface{}) (interface{}, error) {
 	if items, ok := toArrayNum(arguments[0]); ok {
 		d := sort.Float64Slice(items)
@@ -749,7 +732,6 @@ func jpfSort(arguments []interface{}) (interface{}, error) {
 	}
 	return final, nil
 }
-
 func jpfSortBy(arguments []interface{}) (interface{}, error) {
 	intr := arguments[0].(*treeInterpreter)
 	arr := arguments[1].([]interface{})
@@ -782,7 +764,6 @@ func jpfSortBy(arguments []interface{}) (interface{}, error) {
 		return nil, errors.New("invalid type, must be number of string")
 	}
 }
-
 func jpfJoin(arguments []interface{}) (interface{}, error) {
 	sep := arguments[0].(string)
 	// We can't just do arguments[1].([]string), we have to
@@ -793,7 +774,6 @@ func jpfJoin(arguments []interface{}) (interface{}, error) {
 	}
 	return strings.Join(arrayStr, sep), nil
 }
-
 func jpfReverse(arguments []interface{}) (interface{}, error) {
 	if s, ok := arguments[0].(string); ok {
 		r := []rune(s)
@@ -810,14 +790,12 @@ func jpfReverse(arguments []interface{}) (interface{}, error) {
 	}
 	return reversed, nil
 }
-
 func jpfToArray(arguments []interface{}) (interface{}, error) {
 	if _, ok := arguments[0].([]interface{}); ok {
 		return arguments[0], nil
 	}
 	return arguments[:1:1], nil
 }
-
 func jpfToString(arguments []interface{}) (interface{}, error) {
 	if v, ok := arguments[0].(string); ok {
 		return v, nil
@@ -828,7 +806,6 @@ func jpfToString(arguments []interface{}) (interface{}, error) {
 	}
 	return string(result), nil
 }
-
 func jpfToNumber(arguments []interface{}) (interface{}, error) {
 	arg := arguments[0]
 	if v, ok := arg.(float64); ok {
@@ -855,7 +832,6 @@ func jpfToNumber(arguments []interface{}) (interface{}, error) {
 	}
 	return nil, errors.New("unknown type")
 }
-
 func jpfNotNull(arguments []interface{}) (interface{}, error) {
 	for _, arg := range arguments {
 		if arg != nil {
